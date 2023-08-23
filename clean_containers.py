@@ -1,5 +1,5 @@
 import docker
-import variables
+import common
 
 
 def clean(image_name:str):
@@ -15,10 +15,10 @@ def clean(image_name:str):
                 container.remove()
     
     for network in client.networks.list():
-        if variables.NETWORK_NAME_PREFIX in network.name:
+        if common.NETWORK_NAME_PREFIX in network.name:
             network.remove()
 
     print('all containers and networks are stopped and removed')
 
 if __name__ == '__main__':
-    clean(variables.IMAGE_NAME)
+    clean(common.IMAGE_NAME)
