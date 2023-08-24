@@ -4,6 +4,8 @@
 
 systemctl start frr
 
+sleep 10
+
 vtysh
 
 echo "configure terminal

@@ -2,7 +2,8 @@ import docker
 import typing
 import subprocess
 import os
-from common import rescale, X, Y, HOST_HELPER_SCRIPTS_PATH, CONTAINER_HELPER_SCRIPTS_PATH, IMAGE_NAME
+import time
+from common import rescale, X, Y, HOST_HELPER_SCRIPTS_PATH, CONTAINER_HELPER_SCRIPTS_PATH, IMAGE_NAME, HOST_UDP_APP_PATH, CONTAINER_UDP_APP_PATH
 from Ipv4Address import Ipv4Address
 
 
@@ -83,7 +84,11 @@ class SatelliteNode:
         self.interface_cnt = 0
 
         subprocess.run(['docker', 'cp', HOST_HELPER_SCRIPTS_PATH, self.id.__str__() + ':' + CONTAINER_HELPER_SCRIPTS_PATH])
+        subprocess.run(['docker', 'cp', HOST_UDP_APP_PATH, self.id.__str__() + ':' + CONTAINER_UDP_APP_PATH])
+        self.container.exec_run('chmod 777 -R ' + CONTAINER_HELPER_SCRIPTS_PATH + '*', privileged=True)
+        self.container.exec_run('chmod 777 -R ' + CONTAINER_UDP_APP_PATH + '*', privileged=True)
  
+        time.sleep(2)
         self.startFRR()  
         # copy helper scripts from local host to container
 
@@ -95,27 +100,45 @@ class SatelliteNode:
     def startFRR(self) -> None:
         if not os.path.exists(HOST_HELPER_SCRIPTS_PATH + 'start_frr.sh'):
             raise Exception('start_frr.sh not exist!')
-        ret = self.container.exec_run('chmod 777 ' + CONTAINER_HELPER_SCRIPTS_PATH + 'start_frr.sh ', privileged=True)
+        
         # print(ret[1])
 
         router_id_str = Ipv4Address(0, 0, self.id.x, self.id.y).__str__() 
         ret = self.container.exec_run('/bin/bash ' + CONTAINER_HELPER_SCRIPTS_PATH + 'start_frr.sh ' + router_id_str)
-        print(ret[1].decode())
+        # TODO: sometimes the frr is not correctly started, why?
+        if ret[0] != 0:
+            raise Exception('start frr failed!')
+        # print(ret[1].decode())
 
 
     def configLatestOSPFInterface(self, addr: Ipv4Address, cost: int) -> None:
         if not os.path.exists(HOST_HELPER_SCRIPTS_PATH + 'config_one_ospf_interface.sh'):
             raise Exception('config_one_ospf_interface.sh not exist!')
-        self.container.exec_run('chmod 777 ' + CONTAINER_HELPER_SCRIPTS_PATH + 'config_one_ospf_interface.sh ', privileged=True)
 
         self.interface_cnt += 1
         interface_name = 'eth%d' % self.interface_cnt
         subnet_str = Ipv4Address(addr.ip1, addr.ip2, addr.ip3, 0).__str__() + '/24'
-        # print('/bin/bash ' + CONTAINER_HELPER_SCRIPTS_PATH + 'config_one_ospf_interface.sh ' + interface_name + ' ' + subnet_str + ' ' + str(cost))
+        
+        # delay and bandwidth config
+        ret = self.container.exec_run('tc qdisc add dev %s root netem delay %fms' % (interface_name, float(cost / 10)))
+        # print(ret[1].decode())
+
+        # OSPF config
         ret = self.container.exec_run('/bin/bash ' + CONTAINER_HELPER_SCRIPTS_PATH + 'config_one_ospf_interface.sh ' + interface_name + ' ' + subnet_str + ' ' + str(cost))
 
+        # print(ret[1].decode())
+        # print('------------------------')
+
+    
+    def startReceivingUDP(self, ip: Ipv4Address) -> None:
+        ret = self.container.exec_run('python3 ' + CONTAINER_UDP_APP_PATH + 'udp_receiver.py ' + ip.__str__(), stream=True)
+        for line in ret[1]:
+            print(line.decode())
+
+
+    def startSendingUDP(self, ip: Ipv4Address) -> None:
+        ret = self.container.exec_run('python3 ' + CONTAINER_UDP_APP_PATH + 'udp_sender.py ' + ip.__str__())
         print(ret[1].decode())
-        print('------------------------')
 
             
 satellite_node_dict: typing.Dict[SatelliteNodeID, SatelliteNode] = {}

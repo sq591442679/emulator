@@ -9,8 +9,11 @@ NETWORK_NAME_PREFIX = 'network'
 HOST_HELPER_SCRIPTS_PATH = './container_helper_scripts/'
 CONTAINER_HELPER_SCRIPTS_PATH = '/container_helper_scripts/'
 
-X = 2  # 行 即每个轨道上的卫星数量
-Y = 2  # 列 即轨道数
+HOST_UDP_APP_PATH = './container_udp_applications/'
+CONTAINER_UDP_APP_PATH = '/container_udp_applications/'
+
+X = 11  # 行 即每个轨道上的卫星数量
+Y = 6  # 列 即轨道数
 
 H = 780000  # 轨道高度780千米
 R = 6371004  # 地球半径6371.004千米
