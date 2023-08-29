@@ -110,7 +110,7 @@ class SatelliteNode:
         # TODO: sometimes the frr is not correctly started, why?
         if ret[0] != 0:
             raise Exception('start frr failed!')
-        print(ret[1].decode())
+        # print(ret[1].decode())
 
 
     def addInterface(self, addr: Ipv4Address, cost: int) -> None:

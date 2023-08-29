@@ -19,6 +19,6 @@ class IPInterface:
         ret = container.exec_run('/bin/bash ' + CONTAINER_HELPER_SCRIPTS_PATH + 'config_one_ospf_interface.sh ' 
                                  + self.name + ' ' + self.address.__str__() + '/32' + ' ' + str(self.cost))
 
-        print(ret[1].decode())
+        # print(ret[1].decode())
         if ret[0] != 0:
             print(ret[1].decode())

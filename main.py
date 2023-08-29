@@ -2,10 +2,12 @@ import docker
 import time
 from multiprocessing import Process
 from threading import Thread
-from common import X, Y, generateISLDelay, IMAGE_NAME, NETWORK_NAME_PREFIX
+from common import X, Y, generateISLDelay, IMAGE_NAME, NETWORK_NAME_PREFIX, WARMUP_PERIOD, IMAGE_NAME
 from SatelliteNode import SatelliteNodeID, SatelliteNode, satellite_node_dict
 from DirectionalLink import DirectionalLinkID, DirectionalLink, link_dict
 from Ipv4Address import Ipv4Address
+from LinkEvent import generate_events
+from clean_containers import clean
 
 
 def createSatelliteNode(client: docker.DockerClient, id: SatelliteNodeID):
@@ -110,18 +112,18 @@ def start_sending(src_id: SatelliteNodeID, dst_id: SatelliteNodeID):
 
 
 if __name__ == '__main__':
+    clean(IMAGE_NAME)
+
+    time.sleep(3)
+
     buildSatellites()
     buildLinks()
     configOSPFInterfaces()
 
     print('topology successfully built with OSPF configured, wait for OSPF loading...')
-    time.sleep(60)  # wait for ospf loading
 
+    generate_events(0.05, [SatelliteNodeID(9, 3)], SatelliteNodeID(5, 5), './link_event_test.xml', seed=654)
 
-    start_sending(SatelliteNodeID(9, 3), SatelliteNodeID(5, 5))
-    # print(SatelliteNodeID(1, 2) in satellite_node_dict.keys())
+    # time.sleep(WARMUP_PERIOD)  # wait for ospf loading
 
-    
-    # ret = satellite_node_dict[SatelliteNodeID(1, 1)].container.exec_run("ping -c 10 192.168.8.1", stream=True)
-    # for line in ret[1]:
-    #     print(line.decode())
+    # start_sending(SatelliteNodeID(9, 3), SatelliteNodeID(5, 5))
