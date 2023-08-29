@@ -1,6 +1,6 @@
 import docker
 import typing
-from SatelliteNode import SatelliteNode, SatelliteNodeID
+from SatelliteNode import SatelliteNode, SatelliteNodeID, satellite_node_dict
 from Ipv4Address import Ipv4Address
 
 
@@ -38,18 +38,27 @@ class DirectionalLink:
     每当新建一个DirectionalLink对象时, 都会配置容器中对应的源接口的ospf
     """
 
-    def __init__(self, src: SatelliteNode, dst: SatelliteNode, network: docker.models.networks.Network, src_interface_address: Ipv4Address, cost: int) -> None:
-        self.id = DirectionalLinkID(src.id, dst.id)
-        self.src = src
-        self.dst = dst
+    def __init__(self, src_id: SatelliteNodeID, dst_id: SatelliteNodeID, network: docker.models.networks.Network, src_interface_address: Ipv4Address, cost: int) -> None:
+        self.id = DirectionalLinkID(src_id, dst_id)
+        self.src_id = src_id
+        self.dst_id = dst_id
         self.network = network
-        self.interfaceAddress = src_interface_address
+        self.interface_address = src_interface_address
         self.cost = cost
         # print(self.src.id.__str__())
 
-        self.network.connect(container=self.src.id.__str__(), ipv4_address=src_interface_address.__str__())
-        self.src.configLatestOSPFInterface(src_interface_address, cost)
+        self.connect()
+        
+        satellite_node_dict[src_id].addInterface(src_interface_address, cost)
         pass
+    
+
+    def connect(self):
+        self.network.connect(container=self.src_id.__str__(), ipv4_address=self.interface_address.__str__())
+
+
+    def disconnect(self):
+        self.network.disconnect(container=self.src_id.__str__())
 
 
 link_dict: typing.Dict[DirectionalLinkID, DirectionalLink] = {}

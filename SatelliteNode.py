@@ -5,6 +5,7 @@ import os
 import time
 from common import rescale, X, Y, HOST_HELPER_SCRIPTS_PATH, CONTAINER_HELPER_SCRIPTS_PATH, IMAGE_NAME, HOST_UDP_APP_PATH, CONTAINER_UDP_APP_PATH
 from Ipv4Address import Ipv4Address
+from IPInterface import IPInterface
 
 
 class SatelliteNodeID:
@@ -82,9 +83,10 @@ class SatelliteNode:
         self.id = id
         self.container = container
         self.interface_cnt = 0
+        self.interface_dict: typing.Dict[str, IPInterface] = {}
 
-        subprocess.run(['docker', 'cp', HOST_HELPER_SCRIPTS_PATH, self.id.__str__() + ':' + CONTAINER_HELPER_SCRIPTS_PATH])
-        subprocess.run(['docker', 'cp', HOST_UDP_APP_PATH, self.id.__str__() + ':' + CONTAINER_UDP_APP_PATH])
+        subprocess.run(['docker', 'cp', HOST_HELPER_SCRIPTS_PATH, self.id.__str__() + ':' + CONTAINER_HELPER_SCRIPTS_PATH], stdout=subprocess.DEVNULL)
+        subprocess.run(['docker', 'cp', HOST_UDP_APP_PATH, self.id.__str__() + ':' + CONTAINER_UDP_APP_PATH], stdout=subprocess.DEVNULL)
         self.container.exec_run('chmod 777 -R ' + CONTAINER_HELPER_SCRIPTS_PATH + '*', privileged=True)
         self.container.exec_run('chmod 777 -R ' + CONTAINER_UDP_APP_PATH + '*', privileged=True)
  
@@ -108,26 +110,22 @@ class SatelliteNode:
         # TODO: sometimes the frr is not correctly started, why?
         if ret[0] != 0:
             raise Exception('start frr failed!')
-        # print(ret[1].decode())
+        print(ret[1].decode())
 
 
-    def configLatestOSPFInterface(self, addr: Ipv4Address, cost: int) -> None:
+    def addInterface(self, addr: Ipv4Address, cost: int) -> None:
         if not os.path.exists(HOST_HELPER_SCRIPTS_PATH + 'config_one_ospf_interface.sh'):
             raise Exception('config_one_ospf_interface.sh not exist!')
 
         self.interface_cnt += 1
         interface_name = 'eth%d' % self.interface_cnt
-        subnet_str = Ipv4Address(addr.ip1, addr.ip2, addr.ip3, 0).__str__() + '/24'
-        
-        # delay and bandwidth config
-        ret = self.container.exec_run('tc qdisc add dev %s root netem delay %fms' % (interface_name, float(cost / 10)))
-        # print(ret[1].decode())
+        self.interface_dict[interface_name] = IPInterface(interface_name, addr, cost)
 
-        # OSPF config
-        ret = self.container.exec_run('/bin/bash ' + CONTAINER_HELPER_SCRIPTS_PATH + 'config_one_ospf_interface.sh ' + interface_name + ' ' + subnet_str + ' ' + str(cost))
 
-        # print(ret[1].decode())
-        # print('------------------------')
+    def configOSPFInterfaces(self):
+        for name in self.interface_dict.keys():
+            interface = self.interface_dict[name]
+            interface.configOSPF(self.container)
 
     
     def startReceivingUDP(self, ip: Ipv4Address) -> None:
