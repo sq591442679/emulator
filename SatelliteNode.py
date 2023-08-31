@@ -141,14 +141,17 @@ class SatelliteNode:
         # print(ret[1].decode(), flush=True)
 
 
-    def startEventGenerating(self, link_failure_rate, seed=None):
+    def startEventGenerating(self, shared_event_list, link_failure_rate, seed=None) -> typing.List[str]:
         if (seed == None):
-            ret = self.container.exec_run('python3 ' + CONTAINER_UDP_APP_PATH + 'udp_sender.py ' + str(link_failure_rate))
+            ret = self.container.exec_run('python3 ' + CONTAINER_EVENT_GENERATOR_PATH + 'event_generator.py ' 
+                                          + str(link_failure_rate) + ' ' + self.id.__str__(), stream=True)
         else:
-            ret = self.container.exec_run('python3 ' + CONTAINER_UDP_APP_PATH + 'udp_sender.py ' + str(link_failure_rate) + ' ' + str(seed))
-        if ret[0] != 0:
-            raise Exception('event generation failed!')
-        # print(ret[1].decode())
+            ret = self.container.exec_run('python3 ' + CONTAINER_EVENT_GENERATOR_PATH + 'event_generator.py ' 
+                                          + str(link_failure_rate) + ' ' + self.id.__str__() + ' ' + str(seed), stream=True)
+            
+        for line in ret[1]:
+            if len(line.decode().strip()) > 0:
+                shared_event_list.append(line.decode().strip())
 
             
 satellite_node_dict: typing.Dict[SatelliteNodeID, SatelliteNode] = {}

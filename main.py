@@ -1,7 +1,7 @@
 import docker
 import time
 import typing
-from multiprocessing import Process
+from multiprocessing import Process, Manager
 from threading import Thread
 from common import X, Y, generateISLDelay, IMAGE_NAME, NETWORK_NAME_PREFIX, \
                 IMAGE_NAME, LINK_FAILURE_RATE
@@ -124,6 +124,8 @@ def startSimulation():
     dst_node = satellite_node_dict[DELIVERY_DST_ID]
     src_node_list = [satellite_node_dict[i] for i in DELIVERY_SRC_ID_LIST]
     process_list: typing.List[Process] = []
+    manager = Manager()
+    shared_event_list = manager.list()
 
     dst_link = link_dict[DirectionalLinkID(DELIVERY_DST_ID, DELIVERY_DST_ID.getNeighborIDOnDirection(1))]
     dst_ip = dst_link.interface_address
@@ -137,7 +139,7 @@ def startSimulation():
 
     for id in satellite_node_dict.keys():
         node = satellite_node_dict[id]
-        process_event_generator = Process(target=node.startEventGenerating, args=(LINK_FAILURE_RATE, 8641))
+        process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, LINK_FAILURE_RATE, 8641))
         process_list.append(process_event_generator)
 
     for process in process_list:
@@ -147,6 +149,10 @@ def startSimulation():
         process.join()
 
     print('send and receive completed')
+    shared_event_list.sort()
+    with open('./events.txt', 'w') as f:
+        for event in shared_event_list:
+            print(event, file=f)
 
 
 if __name__ == '__main__':
@@ -161,3 +167,5 @@ if __name__ == '__main__':
     startFRR()
 
     startSimulation()
+
+    clean(IMAGE_NAME)

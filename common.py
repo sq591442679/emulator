@@ -12,8 +12,8 @@ CONTAINER_HELPER_SCRIPTS_PATH = '/container_helper_scripts/'
 HOST_UDP_APP_PATH = './container_udp_applications/'
 CONTAINER_UDP_APP_PATH = '/container_udp_applications/'
 
-HOST_EVENT_GENERATOR_PATH = './container_event_generator/event_generator.py'
-CONTAINER_EVENT_GENERATOR_PATH = '/container_event_generator/event_generator.py'
+HOST_EVENT_GENERATOR_PATH = './container_event_generator/'
+CONTAINER_EVENT_GENERATOR_PATH = '/container_event_generator/'
 
 X = 11  # 行 即每个轨道上的卫星数量
 Y = 6  # 列 即轨道数
