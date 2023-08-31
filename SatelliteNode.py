@@ -3,7 +3,8 @@ import typing
 import subprocess
 import os
 import time
-from common import rescale, X, Y, HOST_HELPER_SCRIPTS_PATH, CONTAINER_HELPER_SCRIPTS_PATH, IMAGE_NAME, HOST_UDP_APP_PATH, CONTAINER_UDP_APP_PATH
+from common import rescale, X, Y, HOST_HELPER_SCRIPTS_PATH, CONTAINER_HELPER_SCRIPTS_PATH, IMAGE_NAME, \
+                HOST_UDP_APP_PATH, CONTAINER_UDP_APP_PATH, HOST_EVENT_GENERATOR_PATH, CONTAINER_EVENT_GENERATOR_PATH
 from Ipv4Address import Ipv4Address
 from IPInterface import IPInterface
 
@@ -87,11 +88,12 @@ class SatelliteNode:
 
         subprocess.run(['docker', 'cp', HOST_HELPER_SCRIPTS_PATH, self.id.__str__() + ':' + CONTAINER_HELPER_SCRIPTS_PATH], stdout=subprocess.DEVNULL)
         subprocess.run(['docker', 'cp', HOST_UDP_APP_PATH, self.id.__str__() + ':' + CONTAINER_UDP_APP_PATH], stdout=subprocess.DEVNULL)
+        subprocess.run(['docker', 'cp', HOST_EVENT_GENERATOR_PATH, self.id.__str__() + ':' + CONTAINER_EVENT_GENERATOR_PATH], stdout=subprocess.DEVNULL)
         self.container.exec_run('chmod 777 -R ' + CONTAINER_HELPER_SCRIPTS_PATH + '*', privileged=True)
         self.container.exec_run('chmod 777 -R ' + CONTAINER_UDP_APP_PATH + '*', privileged=True)
+        self.container.exec_run('chmod 777 -R ' + CONTAINER_EVENT_GENERATOR_PATH + '*', privileged=True)
  
         time.sleep(2)
-        self.startFRR()  
         # copy helper scripts from local host to container
 
 
@@ -102,8 +104,8 @@ class SatelliteNode:
     def startFRR(self) -> None:
         if not os.path.exists(HOST_HELPER_SCRIPTS_PATH + 'start_frr.sh'):
             raise Exception('start_frr.sh not exist!')
-        
-        # print(ret[1])
+
+        print('starting frr of', self.id.__str__(), flush=True)
 
         router_id_str = Ipv4Address(0, 0, self.id.x, self.id.y).__str__() 
         ret = self.container.exec_run('/bin/bash ' + CONTAINER_HELPER_SCRIPTS_PATH + 'start_frr.sh ' + router_id_str)
@@ -131,12 +133,22 @@ class SatelliteNode:
     def startReceivingUDP(self, ip: Ipv4Address) -> None:
         ret = self.container.exec_run('python3 ' + CONTAINER_UDP_APP_PATH + 'udp_receiver.py ' + ip.__str__(), stream=True)
         for line in ret[1]:
-            print(line.decode())
+            print(line.decode(), flush=True)
 
 
     def startSendingUDP(self, ip: Ipv4Address) -> None:
         ret = self.container.exec_run('python3 ' + CONTAINER_UDP_APP_PATH + 'udp_sender.py ' + ip.__str__())
-        print(ret[1].decode())
+        # print(ret[1].decode(), flush=True)
+
+
+    def startEventGenerating(self, link_failure_rate, seed=None):
+        if (seed == None):
+            ret = self.container.exec_run('python3 ' + CONTAINER_UDP_APP_PATH + 'udp_sender.py ' + str(link_failure_rate))
+        else:
+            ret = self.container.exec_run('python3 ' + CONTAINER_UDP_APP_PATH + 'udp_sender.py ' + str(link_failure_rate) + ' ' + str(seed))
+        if ret[0] != 0:
+            raise Exception('event generation failed!')
+        # print(ret[1].decode())
 
             
 satellite_node_dict: typing.Dict[SatelliteNodeID, SatelliteNode] = {}

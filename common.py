@@ -12,6 +12,9 @@ CONTAINER_HELPER_SCRIPTS_PATH = '/container_helper_scripts/'
 HOST_UDP_APP_PATH = './container_udp_applications/'
 CONTAINER_UDP_APP_PATH = '/container_udp_applications/'
 
+HOST_EVENT_GENERATOR_PATH = './container_event_generator/event_generator.py'
+CONTAINER_EVENT_GENERATOR_PATH = '/container_event_generator/event_generator.py'
+
 X = 11  # 行 即每个轨道上的卫星数量
 Y = 6  # 列 即轨道数
 
@@ -19,13 +22,9 @@ H = 780000  # 轨道高度780千米
 R = 6371004  # 地球半径6371.004千米
 C = 3e8  # 光速
 
-WARMUP_PERIOD = 60  # unit: s
-LINK_DOWN_DURATION = 5
-SIMULATION_END_TIME = 160
-
 LINK_FAILURE_RATE = 0.05
-LINK_DISCONNECT_TYPE = 1
-LINK_RECONNECT_TYPE = 2
+
+RANDOM_SEED = 8461
 
 
 def rescale(num, NUM):

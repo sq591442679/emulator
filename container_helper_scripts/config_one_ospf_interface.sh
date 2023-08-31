@@ -5,15 +5,15 @@
 
 vtysh
 
-echo "configure terminal
-    interface $1
+echo "
+interface $1
     ip ospf network point-to-point
     ip ospf area 0.0.0.0
     ip ospf hello-interval 1
+    ip ospf dead-interval 4
+    ip ospf retransmit-interval 2
     ip ospf cost $3
-    exit
-    exit
-    exit
-" | vtysh
+
+" >> /etc/frr/frr.conf
 
 # echo "$1 configured"

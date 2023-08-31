@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# router_id=$1
+# $1: router id
+# $2: 
 
 echo "
 net.ipv4.conf.eth1.rp_filter = 0
@@ -13,18 +14,12 @@ sysctl -p
 
 sleep 2
 
+echo "
+router ospf
+    ospf router-id $1
+
+" >> /etc/frr/frr.conf
+
 systemctl start frr
 
-sleep 10
-
-vtysh
-
-echo "
-configure terminal
-router ospf
-ospf router-id $1
-exit
-exit
-" | vtysh
-
-
+sleep 5

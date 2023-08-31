@@ -8,11 +8,14 @@ if __name__ == '__main__':
     send_interval = SEND_INTERVAL
     target_ip = str(sys.argv[1])
     target_port = PORT
-    total_send_duration = SEND_DURATION
+    total_send_duration = SIMULATION_DURATION
 
     cnt = 0
 
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    print('wait for OSPF loading', flush=True)
+    time.sleep(WARMUP_PERIOD)
 
     print('sending UDP to ' + target_ip, flush=True)
 
@@ -36,3 +39,5 @@ if __name__ == '__main__':
         time.sleep(send_interval)
 
     udp_socket.close()
+
+    print('sending stopped')

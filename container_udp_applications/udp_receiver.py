@@ -10,7 +10,7 @@ if __name__ == '__main__':
 
     total_receive_duration = RECEIVE_DURATION
 
-    expected_cnt = SEND_DURATION / SEND_INTERVAL
+    expected_cnt = SIMULATION_DURATION / SEND_INTERVAL
     receive_cnt = 0
     avg_delay = 0
 
@@ -33,9 +33,12 @@ if __name__ == '__main__':
 
             print(received_data, flush=True)  # NOTE THE FLUSH
 
-            avg_delay += current_time - received_data['time']
+            avg_delay += (current_time - received_data['time']) * 1000  # unit: ms
             receive_cnt += 1
         except socket.timeout:
             continue
 
+    avg_delay /= receive_cnt
+    print('received %d packets, avg delay:%.1fms' % (receive_cnt, avg_delay), flush=True)
+    
     print('receiving stopped', flush=True)

@@ -1,13 +1,18 @@
 import docker
 import time
+import typing
 from multiprocessing import Process
 from threading import Thread
-from common import X, Y, generateISLDelay, IMAGE_NAME, NETWORK_NAME_PREFIX, WARMUP_PERIOD, IMAGE_NAME
+from common import X, Y, generateISLDelay, IMAGE_NAME, NETWORK_NAME_PREFIX, \
+                IMAGE_NAME, LINK_FAILURE_RATE
 from SatelliteNode import SatelliteNodeID, SatelliteNode, satellite_node_dict
 from DirectionalLink import DirectionalLinkID, DirectionalLink, link_dict
 from Ipv4Address import Ipv4Address
-from LinkEvent import generate_events
 from clean_containers import clean
+
+
+DELIVERY_SRC_ID_LIST = [SatelliteNodeID(9, 3)]
+DELIVERY_DST_ID = SatelliteNodeID(5, 5)
 
 
 def createSatelliteNode(client: docker.DockerClient, id: SatelliteNodeID):
@@ -58,7 +63,6 @@ def buildLinks():
                 src_interface_address = Ipv4Address(192, 168, ip_subnet_cnt, 1)
                 dst_interface_address = src_interface_address.getNeighboringInterfaceIPAddress()
 
-
                 link_cost = 0x3f3f3f3f
 
                 if direction == 4:
@@ -84,29 +88,63 @@ def buildLinks():
 
 def configOSPFInterfaces():
     print('configuring OSPF interaces...')
+
+    thread_list: typing.List[Thread] = []
     for id in satellite_node_dict:
         print('configuring interfaces of ' + id.__str__())
         satellite_node = satellite_node_dict[id]
-        satellite_node.configOSPFInterfaces()
+        thread = Thread(target=satellite_node.configOSPFInterfaces, args=())
+        thread_list.append(thread)
+        thread.start()
+
+    for thread in thread_list:
+        thread.join()
+        
     print('OSPF interfaces configured')
+    
+
+"""
+start sending and the link disconnecting/reconnecting
+"""
+def startFRR():
+    process_list = []
+
+    print('starting FRR...')
+    for node_id in satellite_node_dict.keys():
+        node = satellite_node_dict[node_id]
+        process = Process(target=node.startFRR, args=())
+        process.start()
+        process_list.append(process)
+
+    for process in process_list:
+        process.join()
 
 
-def start_sending(src_id: SatelliteNodeID, dst_id: SatelliteNodeID):
-    dst_node = satellite_node_dict[dst_id]
-    src_node = satellite_node_dict[src_id]
-    dst_link = link_dict[DirectionalLinkID(dst_id, dst_id.getNeighborIDOnDirection(1))]
+def startSimulation():
+    dst_node = satellite_node_dict[DELIVERY_DST_ID]
+    src_node_list = [satellite_node_dict[i] for i in DELIVERY_SRC_ID_LIST]
+    process_list: typing.List[Process] = []
+
+    dst_link = link_dict[DirectionalLinkID(DELIVERY_DST_ID, DELIVERY_DST_ID.getNeighborIDOnDirection(1))]
     dst_ip = dst_link.interface_address
 
-    process_send = Process(target=src_node.startSendingUDP, args=(dst_ip,))
     process_receive = Process(target=dst_node.startReceivingUDP, args=(dst_ip,))
+    process_list.append(process_receive)
 
-    print('send and receive starting...')
+    for src_node in src_node_list:
+        process_send = Process(target=src_node.startSendingUDP, args=(dst_ip,))
+        process_list.append(process_send)
 
-    process_receive.start()
-    process_send.start()
+    for id in satellite_node_dict.keys():
+        node = satellite_node_dict[id]
+        process_event_generator = Process(target=node.startEventGenerating, args=(LINK_FAILURE_RATE, 8641))
+        process_list.append(process_event_generator)
 
-    process_receive.join()
-    process_send.join()
+    for process in process_list:
+        process.start()
+
+    for process in process_list:
+        process.join()
 
     print('send and receive completed')
 
@@ -120,10 +158,6 @@ if __name__ == '__main__':
     buildLinks()
     configOSPFInterfaces()
 
-    print('topology successfully built with OSPF configured, wait for OSPF loading...')
+    startFRR()
 
-    generate_events(0.05, [SatelliteNodeID(9, 3)], SatelliteNodeID(5, 5), './link_event_test.xml', seed=654)
-
-    # time.sleep(WARMUP_PERIOD)  # wait for ospf loading
-
-    # start_sending(SatelliteNodeID(9, 3), SatelliteNodeID(5, 5))
+    startSimulation()
