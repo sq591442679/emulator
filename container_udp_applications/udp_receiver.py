@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
             print(received_data, flush=True)  # NOTE THE FLUSH
 
-            avg_delay += (time.time() - received_data['time']) * 1000  # unit: ms
+            avg_delay += (time.time() - received_data['real_time']) * 1000  # unit: ms
             receive_cnt += 1
         except socket.timeout:
             continue

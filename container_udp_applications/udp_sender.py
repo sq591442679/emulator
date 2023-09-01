@@ -31,7 +31,7 @@ if __name__ == '__main__':
         cnt += 1
         data_dict = {
             'cnt': cnt,
-            'time': current_time
+            'real_time': current_time 
         }
         data_bytes = pickle.dumps(data_dict)
         udp_socket.sendto(data_bytes, (target_ip, target_port))

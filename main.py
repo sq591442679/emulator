@@ -1,6 +1,7 @@
 import docker
 import time
 import typing
+import json
 from multiprocessing import Process, Manager
 from threading import Thread
 from common import X, Y, generateISLDelay, IMAGE_NAME, NETWORK_NAME_PREFIX, \
@@ -139,7 +140,7 @@ def startSimulation():
 
     for id in satellite_node_dict.keys():
         node = satellite_node_dict[id]
-        process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, LINK_FAILURE_RATE, 8641))
+        process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, LINK_FAILURE_RATE, node.id.__hash__()))
         process_list.append(process_event_generator)
 
     for process in process_list:
@@ -149,9 +150,11 @@ def startSimulation():
         process.join()
 
     print('send and receive completed')
-    shared_event_list.sort()
+    json_list = [json.loads(event) for event in shared_event_list]
+    json_list.sort(key=lambda x: x["sim_time"])
+    # shared_event_list.sort()
     with open('./events.txt', 'w') as f:
-        for event in shared_event_list:
+        for event in json_list:
             print(event, file=f)
 
 

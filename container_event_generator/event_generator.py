@@ -5,12 +5,13 @@ import sys
 import math
 import subprocess
 import typing
+import os
 
 
 WARMUP_PERIOD = 20  # unit: s
 LINK_DOWN_DURATION = 5
 SIMULATION_DURATION = 100
-SIMULATION_END_TIME = WARMUP_PERIOD + SIMULATION_DURATION
+SIMULATION_END_TIME = SIMULATION_DURATION
 
 
 def generate_event_for_interface(container_name:str, interface_name: str, link_failure_rate: float, seed=None):
@@ -25,20 +26,39 @@ def generate_event_for_interface(container_name:str, interface_name: str, link_f
 
     while current_sim_time <= SIMULATION_END_TIME:
         sim_time_interval = random.expovariate(poisson_lambda)
+
+        if current_sim_time + sim_time_interval >= SIMULATION_END_TIME:  # if there aren't any failures during this simulation, then break
+            # current_sim_time = SIMULATION_END_TIME + LINK_DOWN_DURATION
+            break
+        
         time.sleep(sim_time_interval)
 
         current_sim_time = time.time() - start_time
-        print("at %.3f, %s.%s goes down" % (current_sim_time, container_name, interface_name), flush=True)
-        subprocess.run(["ifconfig", interface_name, "down"])
+        if current_sim_time >= SIMULATION_END_TIME:
+            break
+
+        print('{"sim_time": %.3f, "intf": "%s.%s", "type": "down"}' % (current_sim_time, container_name, interface_name), flush=True)
+        os.system("ifconfig %s down" % interface_name)
+        # subprocess.run(["ifconfig", interface_name, "down"])
+
+        current_sim_time = time.time() - start_time
+        if current_sim_time >= SIMULATION_END_TIME:
+            break
 
         time.sleep(LINK_DOWN_DURATION)
 
         current_sim_time = time.time() - start_time
-        print("at %.3f, %s.%s goes up" % (current_sim_time, container_name, interface_name), flush=True)
-        subprocess.run(["ifconfig", interface_name, "up"])
+        if current_sim_time >= SIMULATION_END_TIME:
+            break
+        
+        if current_sim_time <= SIMULATION_END_TIME:
+            print('{"sim_time": %.3f, "intf": "%s.%s", "type": "up"}' % (current_sim_time, container_name, interface_name), flush=True)
+            os.system("ifconfig %s up" % interface_name)
+            # subprocess.run(["ifconfig", interface_name, "up"])
 
         current_sim_time = time.time() - start_time
-    pass
+
+    # print('{"at": %.3f, "intf": "%s.%s", "type": "generation done"}' % (current_sim_time, container_name, interface_name), flush=True)
 
 
 """
@@ -47,10 +67,9 @@ argv[2]: container name
 argv[3]: random seed
 """
 if __name__ == '__main__':
+    start_time = time.time()
     link_failure_rate = float(sys.argv[1])
     container_name = sys.argv[2]
-
-    time.sleep(WARMUP_PERIOD)
 
     process_list: typing.List[multiprocessing.Process] = []
 
@@ -65,10 +84,15 @@ if __name__ == '__main__':
         process_seed_list.append(random.randint(1, 0x3f3f3f3f))
 
     interface_name_list = ['eth%d' % i for i in range(1, 5)]
+
     for i in range(len(interface_name_list)):
         process = multiprocessing.Process(target=generate_event_for_interface, 
                                           args=(container_name, interface_name_list[i], link_failure_rate, process_seed_list[i]))
         process_list.append(process)
+
+    time.sleep(WARMUP_PERIOD)
+
+    for process in process_list:
         process.start()
 
     for process in process_list:
