@@ -18,7 +18,7 @@ if __name__ == '__main__':
     udp_socket.bind((local_ip, local_port))
     udp_socket.settimeout(1.0)
 
-    print('receiving UDP on ' + local_ip, flush=True)
+    # print('receiving UDP on ' + local_ip, flush=True)
 
     start_time = time.time()
 
@@ -31,7 +31,7 @@ if __name__ == '__main__':
             data_bytes, addr = udp_socket.recvfrom(1024)
             received_data = pickle.loads(data_bytes)
 
-            print(received_data, flush=True)  # NOTE THE FLUSH
+            # print(received_data, flush=True)  # NOTE THE FLUSH
 
             avg_delay += (time.time() - received_data['real_time']) * 1000  # unit: ms
             receive_cnt += 1
@@ -39,6 +39,6 @@ if __name__ == '__main__':
             continue
 
     avg_delay /= receive_cnt
-    print('received %d/%d packets, avg delay:%.1fms' % (receive_cnt, int(SIMULATION_DURATION / SEND_INTERVAL), avg_delay), flush=True)
+    print('{"drop rate": "%.1f%%", "delay": "%.1f"}' % ((receive_cnt / int(SIMULATION_DURATION / SEND_INTERVAL)) * 100, avg_delay), flush=True)
 
-    print('receiving stopped', flush=True)
+    # print('receiving stopped', flush=True)

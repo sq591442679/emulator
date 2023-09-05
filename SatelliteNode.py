@@ -130,9 +130,11 @@ class SatelliteNode:
             interface.configOSPF(self.container)
 
     
-    def startReceivingUDP(self, ip: Ipv4Address) -> None:
+    def startReceivingUDP(self, shared_result_list, ip: Ipv4Address) -> None:
         ret = self.container.exec_run('python3 ' + CONTAINER_UDP_APP_PATH + 'udp_receiver.py ' + ip.__str__(), stream=True)
         for line in ret[1]:
+            if len(line.decode().strip()) > 0:
+                shared_result_list.append(line.decode().strip())
             print(line.decode(), flush=True)
 
 
@@ -151,7 +153,7 @@ class SatelliteNode:
             
         for line in ret[1]:
             if len(line.decode().strip()) > 0:
-                print(line.decode().strip(), flush=True)
+                # print(line.decode().strip(), flush=True)
                 shared_event_list.append(line.decode().strip())
 
             

@@ -31,6 +31,7 @@ if __name__ == '__main__':
         cnt += 1
         data_dict = {
             'cnt': cnt,
+            'sim_time': elapsed_time,
             'real_time': current_time 
         }
         data_bytes = pickle.dumps(data_dict)

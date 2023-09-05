@@ -2,7 +2,7 @@ import math
 import typing
 
 
-IMAGE_NAME = 'satellite-frr-and-tc'
+IMAGE_NAME = 'satellite:chaned_lsa_ttl_test'
 CONTAINER_NAME_PREFIX = 'satellite'
 NETWORK_NAME_PREFIX = 'network'
 
@@ -15,14 +15,14 @@ CONTAINER_UDP_APP_PATH = '/container_udp_applications/'
 HOST_EVENT_GENERATOR_PATH = './container_event_generator/'
 CONTAINER_EVENT_GENERATOR_PATH = '/container_event_generator/'
 
+NUM_OF_TESTS = 1
+
 X = 11  # 行 即每个轨道上的卫星数量
 Y = 6  # 列 即轨道数
 
 H = 780000  # 轨道高度780千米
 R = 6371004  # 地球半径6371.004千米
 C = 3e8  # 光速
-
-LINK_FAILURE_RATE = 0.05
 
 RANDOM_SEED = 8461
 

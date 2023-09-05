@@ -1,11 +1,12 @@
 import docker
 import time
 import typing
+import csv
 import json
 from multiprocessing import Process, Manager
 from threading import Thread
 from common import X, Y, generateISLDelay, IMAGE_NAME, NETWORK_NAME_PREFIX, \
-                IMAGE_NAME, LINK_FAILURE_RATE
+                IMAGE_NAME, NUM_OF_TESTS
 from SatelliteNode import SatelliteNodeID, SatelliteNode, satellite_node_dict
 from DirectionalLink import DirectionalLinkID, DirectionalLink, link_dict
 from Ipv4Address import Ipv4Address
@@ -121,17 +122,18 @@ def startFRR():
         process.join()
 
 
-def startSimulation():
+def startSimulation(link_failure_rate: float) -> typing.Dict:
     dst_node = satellite_node_dict[DELIVERY_DST_ID]
     src_node_list = [satellite_node_dict[i] for i in DELIVERY_SRC_ID_LIST]
     process_list: typing.List[Process] = []
     manager = Manager()
     shared_event_list = manager.list()
+    shared_result_list = manager.list()
 
     dst_link = link_dict[DirectionalLinkID(DELIVERY_DST_ID, DELIVERY_DST_ID.getNeighborIDOnDirection(1))]
     dst_ip = dst_link.interface_address
 
-    process_receive = Process(target=dst_node.startReceivingUDP, args=(dst_ip,))
+    process_receive = Process(target=dst_node.startReceivingUDP, args=(shared_result_list, dst_ip,))
     process_list.append(process_receive)
 
     for src_node in src_node_list:
@@ -140,7 +142,7 @@ def startSimulation():
 
     for id in satellite_node_dict.keys():
         node = satellite_node_dict[id]
-        process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, LINK_FAILURE_RATE, node.id.__hash__()))
+        process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate, node.id.__hash__()))
         process_list.append(process_event_generator)
 
     for process in process_list:
@@ -150,25 +152,56 @@ def startSimulation():
         process.join()
 
     print('send and receive completed')
-    json_list = [json.loads(event) for event in shared_event_list]
-    json_list.sort(key=lambda x: x["sim_time"])
-    # shared_event_list.sort()
-    with open('./events.txt', 'w') as f:
-        for event in json_list:
-            print(event, file=f)
+
+    # event_file_path = result_prefix + 'events.json'
+    # if len(shared_event_list) > 0:
+    #     json_list = [json.loads(event) for event in shared_event_list]
+    #     json_list.sort(key=lambda x: x["sim_time"])
+    #     # shared_event_list.sort()
+    #     with open(event_file_path, 'a') as f:
+    #         json.dump(json_list, f)
+    # else:
+    #     with open(event_file_path, 'a') as f:
+    #         print('', file=f)
+    
+    return json.loads(shared_result_list[0])
 
 
 if __name__ == '__main__':
-    clean(IMAGE_NAME)
+    # link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
+    link_failure_rate_list = [0.1]
 
-    time.sleep(3)
+    for link_failure_rate in link_failure_rate_list:
+        result_prefix = './results/%.02f/' % link_failure_rate
+        # event_file_path = result_prefix + 'events.json'
+        # with open(event_file_path, 'w') as f:
+        #     print('', end='', file=f)
+        result_file_path = result_prefix + 'result.csv'  
 
-    buildSatellites()
-    buildLinks()
-    configOSPFInterfaces()
+        header = ['cnt', 'drop rate', 'delay']
 
-    startFRR()
+        with open(result_file_path, mode='w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
 
-    startSimulation()
+            for i in range(1, NUM_OF_TESTS + 1):
+                clean(IMAGE_NAME)
 
-    clean(IMAGE_NAME)
+                time.sleep(3)
+
+                buildSatellites()
+                buildLinks()
+                configOSPFInterfaces()
+
+                startFRR()
+
+                # ret = startSimulation(link_failure_rate)
+
+                # writer.writerow([i, ret['drop rate'], ret['delay']])
+
+                print('waiting....')
+                while True:
+                    pass
+
+                clean(IMAGE_NAME)
+

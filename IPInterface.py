@@ -12,7 +12,7 @@ class IPInterface:
 
     def configOSPF(self, container):
         # delay and bandwidth config
-        ret = container.exec_run('tc qdisc add dev %s root netem delay %fms' % (self.name, float(self.cost) / 10))
+        ret = container.exec_run('tc qdisc add dev %s root netem delay %fms rate 10Mbps' % (self.name, float(self.cost) / 10))
         # print(ret[1].decode())
 
         # OSPF config
