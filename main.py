@@ -53,6 +53,8 @@ def buildLinks():
     for x in range(1, X + 1):
         for y in range(1, Y + 1):
             # 与其右边 下边的建立双向连接
+            # NOTE in this step, networks are created but not connected
+            # this is in order to ensure eth1 of a container is really the upper intf
             src_node_id = SatelliteNodeID(x, y)
             for direction in [4, 2]:
                 ip_subnet_cnt += 1
@@ -85,9 +87,19 @@ def buildLinks():
                                                 dst_interface_address, link_cost, getBackwardDirection(direction))
 
                 link_dict[forward_link_id] = forward_link
-                link_dict[backward_link_id] = backward_link     
+                link_dict[backward_link_id] = backward_link 
 
-    print('networks have benn built')
+    # in this step the nwtworks are connected to containers
+    # the intf to the first connected network is eth1, and so on
+    for x in range(1, X + 1):
+        for y in range(1, Y + 1):
+            src_node_id = SatelliteNodeID(x, y)
+            for direction in [1, 2, 3, 4]:
+                dst_node_id = src_node_id.getNeighborIDOnDirection(direction)
+                forward_link_id = DirectionalLinkID(src_node_id, dst_node_id)
+                link_dict[forward_link_id].connect()
+
+    print('networks have been built')
 
 
 def configOSPFInterfaces():

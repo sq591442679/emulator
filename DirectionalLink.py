@@ -48,7 +48,7 @@ class DirectionalLink:
         self.cost = cost
         # print(self.src.id.__str__())
 
-        self.connect()
+        # self.connect()
         
         satellite_node_dict[src_id].addInterface(src_interface_address, cost, direction)
         pass

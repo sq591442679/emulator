@@ -2,7 +2,7 @@ import math
 import typing
 
 
-IMAGE_NAME = 'satellite:changed_lsa_ttl_and_disable_dd'
+IMAGE_NAME = 'ttl_2'
 CONTAINER_NAME_PREFIX = 'satellite'
 NETWORK_NAME_PREFIX = 'network'
 
