@@ -83,7 +83,6 @@ class SatelliteNode:
         """
         self.id = id
         self.container = container
-        self.interface_cnt = 0
         self.interface_dict: typing.Dict[str, IPInterface] = {}
 
         subprocess.run(['docker', 'cp', HOST_HELPER_SCRIPTS_PATH, self.id.__str__() + ':' + CONTAINER_HELPER_SCRIPTS_PATH], stdout=subprocess.DEVNULL)
@@ -115,12 +114,11 @@ class SatelliteNode:
         # print(ret[1].decode())
 
 
-    def addInterface(self, addr: Ipv4Address, cost: int) -> None:
+    def addInterface(self, addr: Ipv4Address, cost: int, direction: int) -> None:
         if not os.path.exists(HOST_HELPER_SCRIPTS_PATH + 'config_one_ospf_interface.sh'):
             raise Exception('config_one_ospf_interface.sh not exist!')
 
-        self.interface_cnt += 1
-        interface_name = 'eth%d' % self.interface_cnt
+        interface_name = 'eth%d' % direction
         self.interface_dict[interface_name] = IPInterface(interface_name, addr, cost)
 
 

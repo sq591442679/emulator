@@ -38,7 +38,8 @@ class DirectionalLink:
     每当新建一个DirectionalLink对象时, 都会配置容器中对应的源接口的ospf
     """
 
-    def __init__(self, src_id: SatelliteNodeID, dst_id: SatelliteNodeID, network: docker.models.networks.Network, src_interface_address: Ipv4Address, cost: int) -> None:
+    def __init__(self, src_id: SatelliteNodeID, dst_id: SatelliteNodeID, network: docker.models.networks.Network, 
+                 src_interface_address: Ipv4Address, cost: int, direction: int) -> None:
         self.id = DirectionalLinkID(src_id, dst_id)
         self.src_id = src_id
         self.dst_id = dst_id
@@ -49,7 +50,7 @@ class DirectionalLink:
 
         self.connect()
         
-        satellite_node_dict[src_id].addInterface(src_interface_address, cost)
+        satellite_node_dict[src_id].addInterface(src_interface_address, cost, direction)
         pass
     
 

@@ -5,7 +5,7 @@ import csv
 import json
 from multiprocessing import Process, Manager
 from threading import Thread
-from common import X, Y, generateISLDelay, IMAGE_NAME, NETWORK_NAME_PREFIX, \
+from common import X, Y, generateISLDelay, getBackwardDirection, IMAGE_NAME, NETWORK_NAME_PREFIX, \
                 IMAGE_NAME, NUM_OF_TESTS
 from SatelliteNode import SatelliteNodeID, SatelliteNode, satellite_node_dict
 from DirectionalLink import DirectionalLinkID, DirectionalLink, link_dict
@@ -79,8 +79,10 @@ def buildLinks():
                 ipam_config = docker.types.IPAMConfig(pool_configs=[ipam_pool])
                 network = client.networks.create(name=NETWORK_NAME_PREFIX + str(ip_subnet_cnt), driver='bridge', ipam=ipam_config)
 
-                forward_link = DirectionalLink(src_node_id, dst_node_id, network, src_interface_address, link_cost)
-                backward_link = DirectionalLink(dst_node_id, src_node_id, network, dst_interface_address, link_cost)
+                forward_link = DirectionalLink(src_node_id, dst_node_id, network, 
+                                               src_interface_address, link_cost, direction)
+                backward_link = DirectionalLink(dst_node_id, src_node_id, network, 
+                                                dst_interface_address, link_cost, getBackwardDirection(direction))
 
                 link_dict[forward_link_id] = forward_link
                 link_dict[backward_link_id] = backward_link     

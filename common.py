@@ -2,7 +2,7 @@ import math
 import typing
 
 
-IMAGE_NAME = 'satellite:chaned_lsa_ttl_test'
+IMAGE_NAME = 'satellite:changed_lsa_ttl_and_disable_dd'
 CONTAINER_NAME_PREFIX = 'satellite'
 NETWORK_NAME_PREFIX = 'network'
 
@@ -34,6 +34,19 @@ def rescale(num, NUM):
         return num % NUM
     else:
         return num + NUM
+
+
+def getBackwardDirection(direction: int) -> int:
+    if direction not in [1, 2, 3, 4]:
+        raise Exception('invalid direction')
+    if direction == 1:
+        return 2
+    if direction == 2:
+        return 1
+    if direction == 3:
+        return 4
+    if direction == 4:
+        return 3
     
 
 def generateISLDelay() -> typing.Dict[int, float]:
@@ -57,3 +70,7 @@ def generateISLDelay() -> typing.Dict[int, float]:
         latitude += delta_latitude
 
     return ISLDelay
+
+
+if __name__ == '__main__':
+    print(generateISLDelay())
