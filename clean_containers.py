@@ -6,6 +6,10 @@ from threading import Thread
 def stopAndRemoveContainer(container):
     container.stop()
     container.remove()
+
+
+def removeNetwork(network):
+    network.remove()
     
 
 def clean(image_name:str):
@@ -26,9 +30,16 @@ def clean(image_name:str):
     for thread in threads:
         thread.join()
     
+    threads = []
+
     for network in client.networks.list():
         if common.NETWORK_NAME_PREFIX in network.name:
-            network.remove()
+            thread = Thread(target=removeNetwork, args=(network, ))
+            thread.start()
+            threads.append(thread)
+            
+    for thread in threads:
+        thread.join()
 
     print('all containers and networks are stopped and removed')
 

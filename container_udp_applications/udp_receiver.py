@@ -39,6 +39,6 @@ if __name__ == '__main__':
             continue
 
     avg_delay /= receive_cnt
-    print('{"drop rate": "%.1f%%", "delay": "%.1f"}' % ((receive_cnt / int(SIMULATION_DURATION / SEND_INTERVAL)) * 100, avg_delay), flush=True)
+    print('{"drop rate": "%.1f%%", "delay": "%.1f"}' % ((1 - receive_cnt / int(SIMULATION_DURATION / SEND_INTERVAL)) * 100, avg_delay), flush=True)
 
     # print('receiving stopped', flush=True)

@@ -213,9 +213,5 @@ if __name__ == '__main__':
 
                 # writer.writerow([i, ret['drop rate'], ret['delay']])
 
-                print('waiting....')
-                while True:
-                    pass
-
-                clean(IMAGE_NAME)
+                # clean(IMAGE_NAME)
 

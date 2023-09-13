@@ -93,11 +93,28 @@ class SatelliteNode:
         self.container.exec_run('chmod 777 -R ' + CONTAINER_EVENT_GENERATOR_PATH + '*', privileged=True)
  
         time.sleep(2)
+
+        self.cleanConfig()
+        self.writeLog()
         # copy helper scripts from local host to container
 
 
     def printIPConfig(self) -> str:
         print(self.container.exec_run('ifconfig')[1].decode())
+
+    
+    def cleanConfig(self):
+        ret = self.container.exec_run('/bin/bash ' + CONTAINER_HELPER_SCRIPTS_PATH + 'clean_config.sh')
+        if ret[0] != 0:
+            raise Exception('clean config failed!')
+        
+
+    def writeLog(self):
+        if not os.path.exists(HOST_HELPER_SCRIPTS_PATH + 'log.sh'):
+            raise Exception('log.sh not exist!')
+        ret = self.container.exec_run('/bin/bash ' + CONTAINER_HELPER_SCRIPTS_PATH + 'log.sh')
+        if ret[0] != 0:
+            raise Exception('write log failed!')
 
 
     def startFRR(self) -> None:

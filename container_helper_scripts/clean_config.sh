@@ -1,0 +1,1 @@
+echo "" > /etc/frr/frr.conf
