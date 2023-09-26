@@ -2,7 +2,7 @@ import math
 import typing
 
 
-IMAGE_NAME = 'test_path'
+IMAGE_NAME = 'path_test'
 CONTAINER_NAME_PREFIX = 'satellite'
 NETWORK_NAME_PREFIX = 'network'
 
