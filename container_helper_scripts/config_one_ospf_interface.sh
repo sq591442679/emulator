@@ -3,6 +3,8 @@
 # echo "arguments: $@"
 # echo "number of args: $#"
 
+echo 1024 > /proc/sys/net/ipv4/neigh/$1/base_reachable_time
+
 vtysh
 
 echo "
