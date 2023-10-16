@@ -13,8 +13,8 @@ from Ipv4Address import Ipv4Address
 from clean_containers import clean
 
 
-DELIVERY_SRC_ID_LIST = [SatelliteNodeID(9, 3)]
-DELIVERY_DST_ID = SatelliteNodeID(5, 5)
+DELIVERY_SRC_ID_LIST = [SatelliteNodeID(1, 6)]
+DELIVERY_DST_ID = SatelliteNodeID(1, 4)
 
 
 def createSatelliteNode(client: docker.DockerClient, id: SatelliteNodeID):
@@ -183,7 +183,7 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
 
 if __name__ == '__main__':
     # link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
-    link_failure_rate_list = [0.1]
+    link_failure_rate_list = [0]
 
     for link_failure_rate in link_failure_rate_list:
         result_prefix = './results/%.02f/' % link_failure_rate

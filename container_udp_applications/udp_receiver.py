@@ -38,7 +38,10 @@ if __name__ == '__main__':
         except socket.timeout:
             continue
 
-    avg_delay /= receive_cnt
+    if receive_cnt == 0:
+        avg_delay = 0x3f3f3f3f
+    else:
+        avg_delay /= receive_cnt
     print('{"drop rate": "%.1f%%", "delay": "%.1f"}' % ((1 - receive_cnt / int(SIMULATION_DURATION / SEND_INTERVAL)) * 100, avg_delay), flush=True)
 
     # print('receiving stopped', flush=True)

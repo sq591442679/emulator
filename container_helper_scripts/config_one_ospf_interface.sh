@@ -18,4 +18,15 @@ interface $1
 
 " >> /etc/frr/frr.conf
 
+# echo "
+# interface $1
+#     ip ospf network point-to-point
+#     ip ospf area 0.0.0.0
+#     ip ospf hello-interval 10
+#     ip ospf dead-interval 40
+#     ip ospf retransmit-interval 20
+#     ip ospf cost $3
+
+# " >> /etc/frr/frr.conf
+
 # echo "$1 configured"
