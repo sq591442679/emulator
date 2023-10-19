@@ -2,6 +2,7 @@ import socket
 import sys
 import time
 import pickle
+import psutil
 from udp_common import *
 
 if __name__ == '__main__':
@@ -34,6 +35,7 @@ if __name__ == '__main__':
             'sim_time': elapsed_time,
             'real_time': current_time 
         }
+        print('boot time:', time.time() - psutil.boot_time())
         data_bytes = pickle.dumps(data_dict)
         udp_socket.sendto(data_bytes, (target_ip, target_port))
 
