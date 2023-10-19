@@ -121,11 +121,11 @@ class SatelliteNode:
         if not os.path.exists(HOST_HELPER_SCRIPTS_PATH + 'start_frr.sh'):
             raise Exception('start_frr.sh not exist!')
 
-        print('starting frr of', self.id.__str__(), flush=True)
+        # print('starting frr of', self.id.__str__(), flush=True)
 
         router_id_str = Ipv4Address(0, 0, self.id.x, self.id.y).__str__() 
         ret = self.container.exec_run('/bin/bash ' + CONTAINER_HELPER_SCRIPTS_PATH + 'start_frr.sh ' + router_id_str)
-        # TODO: sometimes the frr is not correctly started, why?
+
         if ret[0] != 0:
             raise Exception('start frr failed!')
         # print(ret[1].decode())

@@ -107,7 +107,7 @@ def configOSPFInterfaces():
 
     thread_list: typing.List[Thread] = []
     for id in satellite_node_dict:
-        print('configuring interfaces of ' + id.__str__())
+        # print('configuring interfaces of ' + id.__str__())
         satellite_node = satellite_node_dict[id]
         thread = Thread(target=satellite_node.configOSPFInterfaces, args=())
         thread_list.append(thread)
@@ -157,6 +157,7 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
     for id in satellite_node_dict.keys():
         node = satellite_node_dict[id]
         process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate, node.id.__hash__()))
+        # process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate))  # no random seed
         process_list.append(process_event_generator)
 
     for process in process_list:
@@ -173,7 +174,7 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
         json_list.sort(key=lambda x: x["sim_time"])
         # shared_event_list.sort()
         with open(event_file_path, 'a') as f:
-            json.dump(json_list, f, indent=None, separators=(",", "\n"))
+            json.dump(json_list, f, indent=None)
     else:
         with open(event_file_path, 'a') as f:
             print('', file=f)
@@ -205,8 +206,9 @@ if __name__ == '__main__':
     if (is_dry_run):
         dry_run()
     else:
-        link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
+        # link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
         # link_failure_rate_list = [0]
+        link_failure_rate_list = [0.15, 0.2]
 
         for link_failure_rate in link_failure_rate_list:
             result_prefix = './results/%.02f/' % link_failure_rate
