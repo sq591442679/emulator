@@ -15,9 +15,6 @@ if __name__ == '__main__':
 
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    print('wait for OSPF loading', flush=True)
-    time.sleep(WARMUP_PERIOD)
-
     print('sending UDP to ' + target_ip, flush=True)
 
     start_time = time.time()

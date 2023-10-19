@@ -8,13 +8,16 @@ import typing
 import os
 
 
-WARMUP_PERIOD = 20  # unit: s
 LINK_DOWN_DURATION = 5
 SIMULATION_DURATION = 100
 SIMULATION_END_TIME = SIMULATION_DURATION
 
 
 def generate_event_for_interface(container_name:str, interface_name: str, link_failure_rate: float, seed=None):
+
+    if abs(link_failure_rate - 0)< 1e-6:
+        return
+
     interface_failure_rate = 1 - math.sqrt(1 - link_failure_rate)
     poisson_lambda = interface_failure_rate / (LINK_DOWN_DURATION * (1 - interface_failure_rate))
 
@@ -89,8 +92,6 @@ if __name__ == '__main__':
         process = multiprocessing.Process(target=generate_event_for_interface, 
                                           args=(container_name, interface_name_list[i], link_failure_rate, process_seed_list[i]))
         process_list.append(process)
-
-    time.sleep(WARMUP_PERIOD)
 
     for process in process_list:
         process.start()

@@ -168,7 +168,7 @@ class SatelliteNode:
             
         for line in ret[1]:
             if len(line.decode().strip()) > 0:
-                # print(line.decode().strip(), flush=True)
+                print(line.decode().strip(), flush=True)
                 shared_event_list.append(line.decode().strip())
 
             

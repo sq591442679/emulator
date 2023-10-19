@@ -6,7 +6,7 @@ import json
 from multiprocessing import Process, Manager
 from threading import Thread
 from common import X, Y, generateISLDelay, getBackwardDirection, IMAGE_NAME, NETWORK_NAME_PREFIX, \
-                IMAGE_NAME, NUM_OF_TESTS
+                IMAGE_NAME, NUM_OF_TESTS, WARMUP_PERIOD
 from SatelliteNode import SatelliteNodeID, SatelliteNode, satellite_node_dict
 from DirectionalLink import DirectionalLinkID, DirectionalLink, link_dict
 from Ipv4Address import Ipv4Address
@@ -173,7 +173,7 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
         json_list.sort(key=lambda x: x["sim_time"])
         # shared_event_list.sort()
         with open(event_file_path, 'a') as f:
-            json.dump(json_list, f)
+            json.dump(json_list, f, indent=None, separators=(",", "\n"))
     else:
         with open(event_file_path, 'a') as f:
             print('', file=f)
@@ -231,6 +231,8 @@ if __name__ == '__main__':
                     configOSPFInterfaces()
 
                     startFRR()
+
+                    time.sleep(WARMUP_PERIOD)  # wait for OSPF convergence
 
                     ret = startSimulation(link_failure_rate)
 

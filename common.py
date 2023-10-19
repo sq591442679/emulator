@@ -17,6 +17,8 @@ CONTAINER_EVENT_GENERATOR_PATH = '/container_event_generator/'
 
 NUM_OF_TESTS = 1
 
+WARMUP_PERIOD = 3  # unit: s
+
 X = 11  # 行 即每个轨道上的卫星数量
 Y = 6  # 列 即轨道数
 
