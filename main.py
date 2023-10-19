@@ -13,8 +13,8 @@ from Ipv4Address import Ipv4Address
 from clean_containers import clean
 
 
-DELIVERY_SRC_ID_LIST = [SatelliteNodeID(1, 6)]
-DELIVERY_DST_ID = SatelliteNodeID(1, 4)
+DELIVERY_SRC_ID_LIST = [SatelliteNodeID(9, 3)]
+DELIVERY_DST_ID = SatelliteNodeID(5, 5)
 
 
 def createSatelliteNode(client: docker.DockerClient, id: SatelliteNodeID):
@@ -167,51 +167,74 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
 
     print('send and receive completed')
 
-    # event_file_path = result_prefix + 'events.json'
-    # if len(shared_event_list) > 0:
-    #     json_list = [json.loads(event) for event in shared_event_list]
-    #     json_list.sort(key=lambda x: x["sim_time"])
-    #     # shared_event_list.sort()
-    #     with open(event_file_path, 'a') as f:
-    #         json.dump(json_list, f)
-    # else:
-    #     with open(event_file_path, 'a') as f:
-    #         print('', file=f)
+    event_file_path = result_prefix + 'events.json'
+    if len(shared_event_list) > 0:
+        json_list = [json.loads(event) for event in shared_event_list]
+        json_list.sort(key=lambda x: x["sim_time"])
+        # shared_event_list.sort()
+        with open(event_file_path, 'a') as f:
+            json.dump(json_list, f)
+    else:
+        with open(event_file_path, 'a') as f:
+            print('', file=f)
     
     return json.loads(shared_result_list[0])
 
 
+"""
+only start containers & networks,
+and run the routing protocol,
+but no UDP sending and event generating.
+used for tests
+"""
+def dry_run():
+    clean(IMAGE_NAME)
+
+    time.sleep(3)
+
+    buildSatellites()
+    buildLinks()
+    configOSPFInterfaces()
+
+    startFRR()
+
+
 if __name__ == '__main__':
-    # link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
-    link_failure_rate_list = [0]
+    is_dry_run = False
 
-    for link_failure_rate in link_failure_rate_list:
-        result_prefix = './results/%.02f/' % link_failure_rate
-        # event_file_path = result_prefix + 'events.json'
-        # with open(event_file_path, 'w') as f:
-        #     print('', end='', file=f)
-        result_file_path = result_prefix + 'result.csv'  
+    if (is_dry_run):
+        dry_run()
+    else:
+        link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
+        # link_failure_rate_list = [0]
 
-        header = ['cnt', 'drop rate', 'delay']
+        for link_failure_rate in link_failure_rate_list:
+            result_prefix = './results/%.02f/' % link_failure_rate
+            event_file_path = result_prefix + 'events.json'
+            with open(event_file_path, 'w') as f:
+                print('', end='', file=f)
+            result_file_path = result_prefix + 'result.csv'  
 
-        with open(result_file_path, mode='w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(header)
+            header = ['cnt', 'drop rate', 'delay']
 
-            for i in range(1, NUM_OF_TESTS + 1):
-                clean(IMAGE_NAME)
+            with open(result_file_path, mode='w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(header)
 
-                time.sleep(3)
+                for i in range(1, NUM_OF_TESTS + 1):
+                    clean(IMAGE_NAME)
 
-                buildSatellites()
-                buildLinks()
-                configOSPFInterfaces()
+                    time.sleep(3)
 
-                startFRR()
+                    buildSatellites()
+                    buildLinks()
+                    configOSPFInterfaces()
 
-                # ret = startSimulation(link_failure_rate)
+                    startFRR()
 
-                # writer.writerow([i, ret['drop rate'], ret['delay']])
+                    ret = startSimulation(link_failure_rate)
 
-                # clean(IMAGE_NAME)
+                    writer.writerow([i, ret['drop rate'], ret['delay']])
+
+                    clean(IMAGE_NAME)    
 

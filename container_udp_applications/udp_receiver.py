@@ -28,7 +28,7 @@ if __name__ == '__main__':
             if current_time - start_time > total_receive_duration:
                 break
 
-            data_bytes, addr = udp_socket.recvfrom(1024)
+            data_bytes, addr = udp_socket.recvfrom(2048)
             received_data = pickle.loads(data_bytes)
 
             # print(received_data, flush=True)  # NOTE THE FLUSH

@@ -33,10 +33,13 @@ if __name__ == '__main__':
         data_dict = {
             'cnt': cnt,
             'sim_time': elapsed_time,
-            'real_time': current_time 
+            'real_time': current_time,
+            'redundant': b'\x00' * 955  # ensure that the UDP packet size = 1024Bytes
         }
-        print('boot time:', time.time() - psutil.boot_time())
+        # print('boot time:', time.time() - psutil.boot_time())
+        
         data_bytes = pickle.dumps(data_dict)
+        # print('data bytes: ', len(data_bytes))
         udp_socket.sendto(data_bytes, (target_ip, target_port))
 
         time.sleep(send_interval)
