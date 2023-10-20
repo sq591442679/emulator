@@ -5,8 +5,8 @@ import csv
 import json
 from multiprocessing import Process, Manager
 from threading import Thread
-from common import X, Y, generateISLDelay, getBackwardDirection, IMAGE_NAME, NETWORK_NAME_PREFIX, \
-                IMAGE_NAME, NUM_OF_TESTS, WARMUP_PERIOD
+from common import X, Y, generateISLDelay, getBackwardDirection, NETWORK_NAME_PREFIX, \
+                NUM_OF_TESTS, WARMUP_PERIOD
 from SatelliteNode import SatelliteNodeID, SatelliteNode, satellite_node_dict
 from DirectionalLink import DirectionalLinkID, DirectionalLink, link_dict
 from Ipv4Address import Ipv4Address
@@ -17,12 +17,12 @@ DELIVERY_SRC_ID_LIST = [SatelliteNodeID(9, 3)]
 DELIVERY_DST_ID = SatelliteNodeID(5, 5)
 
 
-def createSatelliteNode(client: docker.DockerClient, id: SatelliteNodeID):
-    container = client.containers.run(image=IMAGE_NAME, detach=True, privileged=True, name=id.__str__())
+def createSatelliteNode(client: docker.DockerClient, id: SatelliteNodeID, image_name: str):
+    container = client.containers.run(image=image_name, detach=True, privileged=True, name=id.__str__())
     satellite_node_dict[id] = SatelliteNode(id, container)
 
 
-def buildSatellites():
+def buildSatellites(image_name: str):
     print('starting building satellites, please wait...')
 
     client = docker.from_env()
@@ -32,7 +32,7 @@ def buildSatellites():
     for x in range(1, X + 1):
         for y in range(1, Y + 1):
             id = SatelliteNodeID(x, y)
-            thread = Thread(target=createSatelliteNode, args=(client, id))
+            thread = Thread(target=createSatelliteNode, args=(client, id, image_name))
             thread.start()
             threads.append(thread)
 
@@ -156,8 +156,12 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
 
     for id in satellite_node_dict.keys():
         node = satellite_node_dict[id]
-        process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate, node.id.__hash__()))
-        # process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate))  # no random seed
+        if id in DELIVERY_SRC_ID_LIST or id.__eq__(DELIVERY_DST_ID):
+            # process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate, False, node.id.__hash__()))
+            process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate, False))  # no random seed
+        else:
+            # process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate, True, node.id.__hash__()))
+            process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate, True))  # no random seed
         process_list.append(process_event_generator)
 
     for process in process_list:
@@ -168,16 +172,16 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
 
     print('send and receive completed')
 
-    event_file_path = result_prefix + 'events.json'
-    if len(shared_event_list) > 0:
-        json_list = [json.loads(event) for event in shared_event_list]
-        json_list.sort(key=lambda x: x["sim_time"])
-        # shared_event_list.sort()
-        with open(event_file_path, 'a') as f:
-            json.dump(json_list, f, indent=None)
-    else:
-        with open(event_file_path, 'a') as f:
-            print('', file=f)
+    # event_file_path = result_prefix + 'events.json'
+    # if len(shared_event_list) > 0:
+    #     json_list = [json.loads(event) for event in shared_event_list]
+    #     json_list.sort(key=lambda x: x["sim_time"])
+    #     shared_event_list.sort()
+    #     with open(event_file_path, 'a') as f:
+    #         json.dump(json_list, f, indent=None)
+    # else:
+    #     with open(event_file_path, 'a') as f:
+    #         print('', file=f)
     
     return json.loads(shared_result_list[0])
 
@@ -188,8 +192,8 @@ and run the routing protocol,
 but no UDP sending and event generating.
 used for tests
 """
-def dry_run():
-    clean(IMAGE_NAME)
+def dry_run(image_name: str):
+    clean(image_name)
 
     time.sleep(3)
 
@@ -208,37 +212,41 @@ if __name__ == '__main__':
     else:
         # link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
         # link_failure_rate_list = [0]
-        link_failure_rate_list = [0.15, 0.2]
+        link_failure_rate_list = [0.05]
+        image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)] + ['lightweight:ospf']
 
-        for link_failure_rate in link_failure_rate_list:
-            result_prefix = './results/%.02f/' % link_failure_rate
-            event_file_path = result_prefix + 'events.json'
-            with open(event_file_path, 'w') as f:
-                print('', end='', file=f)
-            result_file_path = result_prefix + 'result.csv'  
+        for image_name in image_name_list:
+            for link_failure_rate in link_failure_rate_list:
+                result_prefix = './results/%s/%.02f/' % (image_name, link_failure_rate)
+                event_file_path = result_prefix + 'events.json'
+                with open(event_file_path, 'w') as f:
+                    print('', end='', file=f)
+                result_file_path = result_prefix + 'result.csv'  
 
-            header = ['cnt', 'drop rate', 'delay']
+                header = ['cnt', 'drop rate', 'delay']
 
-            with open(result_file_path, mode='w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(header)
+                with open(result_file_path, mode='w', newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(header)
 
-                for i in range(1, NUM_OF_TESTS + 1):
-                    clean(IMAGE_NAME)
+                    for i in range(1, NUM_OF_TESTS + 1):
+                        clean(image_name)
 
-                    time.sleep(3)
+                        time.sleep(3)
 
-                    buildSatellites()
-                    buildLinks()
-                    configOSPFInterfaces()
+                        buildSatellites(image_name)
+                        buildLinks()
+                        configOSPFInterfaces()
 
-                    startFRR()
+                        startFRR()
 
-                    time.sleep(WARMUP_PERIOD)  # wait for OSPF convergence
+                        time.sleep(WARMUP_PERIOD)  # wait for OSPF convergence
 
-                    ret = startSimulation(link_failure_rate)
+                        ret = startSimulation(link_failure_rate)
 
-                    writer.writerow([i, ret['drop rate'], ret['delay']])
+                        writer.writerow([i, ret['drop rate'], ret['delay']])
 
-                    clean(IMAGE_NAME)    
+                        clean(image_name)    
+
+                        print('----------------------')
 

@@ -67,17 +67,19 @@ def generate_event_for_interface(container_name:str, interface_name: str, link_f
 """
 argv[1]: link failure rate
 argv[2]: container name
-argv[3]: random seed
+argv[3]: whether can shut eth1 down
+argv[4]: random seed
 """
 if __name__ == '__main__':
     start_time = time.time()
     link_failure_rate = float(sys.argv[1])
     container_name = sys.argv[2]
+    can_shut_eth1_down = bool(sys.argv[3])
 
     process_list: typing.List[multiprocessing.Process] = []
 
-    if len(sys.argv) == 4:
-        seed = int(sys.argv[3])
+    if len(sys.argv) == 5:
+        seed = int(sys.argv[4])
     else:
         seed = random.randint(1, 0x3f3f3f3f)
 
@@ -86,7 +88,11 @@ if __name__ == '__main__':
     for i in range(1, 5):
         process_seed_list.append(random.randint(1, 0x3f3f3f3f))
 
-    interface_name_list = ['eth%d' % i for i in range(1, 5)]
+    interface_name_list = []
+    if can_shut_eth1_down:
+        interface_name_list = ['eth%d' % i for i in range(1, 5)]
+    else:
+        interface_name_list = ['eth%d' % i for i in range(2, 5)]
 
     for i in range(len(interface_name_list)):
         process = multiprocessing.Process(target=generate_event_for_interface, 

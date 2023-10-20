@@ -3,7 +3,7 @@ import typing
 import subprocess
 import os
 import time
-from common import rescale, X, Y, HOST_HELPER_SCRIPTS_PATH, CONTAINER_HELPER_SCRIPTS_PATH, IMAGE_NAME, \
+from common import rescale, X, Y, HOST_HELPER_SCRIPTS_PATH, CONTAINER_HELPER_SCRIPTS_PATH, \
                 HOST_UDP_APP_PATH, CONTAINER_UDP_APP_PATH, HOST_EVENT_GENERATOR_PATH, CONTAINER_EVENT_GENERATOR_PATH
 from Ipv4Address import Ipv4Address
 from IPInterface import IPInterface
@@ -158,13 +158,15 @@ class SatelliteNode:
         # print(ret[1].decode(), flush=True)
 
 
-    def startEventGenerating(self, shared_event_list, link_failure_rate, seed=None) -> typing.List[str]:
+    def startEventGenerating(self, shared_event_list, link_failure_rate, can_shut_eth1_down, seed=None) -> typing.List[str]:
         if (seed == None):
             ret = self.container.exec_run('python3 ' + CONTAINER_EVENT_GENERATOR_PATH + 'event_generator.py ' 
-                                          + str(link_failure_rate) + ' ' + self.id.__str__(), stream=True)
+                                          + str(link_failure_rate) + ' ' + self.id.__str__() + ' ' + str(can_shut_eth1_down), 
+                                          stream=True)
         else:
             ret = self.container.exec_run('python3 ' + CONTAINER_EVENT_GENERATOR_PATH + 'event_generator.py ' 
-                                          + str(link_failure_rate) + ' ' + self.id.__str__() + ' ' + str(seed), stream=True)
+                                          + str(link_failure_rate) + ' ' + self.id.__str__() + ' ' + str(can_shut_eth1_down) + ' ' + str(seed), 
+                                          stream=True)
             
         for line in ret[1]:
             if len(line.decode().strip()) > 0:
@@ -174,10 +176,3 @@ class SatelliteNode:
             
 satellite_node_dict: typing.Dict[SatelliteNodeID, SatelliteNode] = {}
 
-
-if __name__ == '__main__':
-    client = docker.from_env()
-
-    id = SatelliteNodeID(1, 1)
-    container = client.containers.run(image=IMAGE_NAME, detach=True, privileged=True, name=id.__str__())
-    satellite_node_dict[id] = SatelliteNode(id, container)

@@ -2,7 +2,6 @@ import math
 import typing
 
 
-IMAGE_NAME = 'path_test'
 CONTAINER_NAME_PREFIX = 'satellite'
 NETWORK_NAME_PREFIX = 'network'
 
@@ -15,7 +14,7 @@ CONTAINER_UDP_APP_PATH = '/container_udp_applications/'
 HOST_EVENT_GENERATOR_PATH = './container_event_generator/'
 CONTAINER_EVENT_GENERATOR_PATH = '/container_event_generator/'
 
-NUM_OF_TESTS = 1
+NUM_OF_TESTS = 5
 
 WARMUP_PERIOD = 3  # unit: s
 
