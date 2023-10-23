@@ -14,9 +14,9 @@ CONTAINER_UDP_APP_PATH = '/container_udp_applications/'
 HOST_EVENT_GENERATOR_PATH = './container_event_generator/'
 CONTAINER_EVENT_GENERATOR_PATH = '/container_event_generator/'
 
-NUM_OF_TESTS = 5
+NUM_OF_TESTS = 50
 
-WARMUP_PERIOD = 3  # unit: s
+WARMUP_PERIOD = 10  # unit: s  NOTE need to be synchronised with WARMUP_PERIOD in frr/ospfd/ospfd.h
 
 X = 11  # 行 即每个轨道上的卫星数量
 Y = 6  # 列 即轨道数

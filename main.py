@@ -205,7 +205,7 @@ def dry_run(image_name: str):
 
 
 if __name__ == '__main__':
-    is_dry_run = True
+    is_dry_run = False
 
     if (is_dry_run):
         dry_run('lightweight:ospf')
@@ -213,7 +213,9 @@ if __name__ == '__main__':
         # link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
         # link_failure_rate_list = [0]
         link_failure_rate_list = [0.05]
-        image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)] + ['lightweight:ospf']
+        # image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)] + ['lightweight:ospf']
+        # image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)]
+        image_name_list = ['lightweight:n_0']
 
         for image_name in image_name_list:
             for link_failure_rate in link_failure_rate_list:
@@ -228,6 +230,10 @@ if __name__ == '__main__':
                 with open(result_file_path, mode='w', newline='') as f:
                     writer = csv.writer(f)
                     writer.writerow(header)
+                    f.flush()
+
+                    avg_drop_rate = 0.0
+                    avg_delay = 0.0
 
                     for i in range(1, NUM_OF_TESTS + 1):
                         clean(image_name)
@@ -245,8 +251,15 @@ if __name__ == '__main__':
                         ret = startSimulation(link_failure_rate)
 
                         writer.writerow([i, ret['drop rate'], ret['delay']])
+                        f.flush()
+                        avg_drop_rate += float(ret['drop rate'].strip('%'))
+                        avg_delay += float(ret['delay'])
 
                         clean(image_name)    
 
                         print('----------------------')
+
+                    avg_drop_rate /= NUM_OF_TESTS
+                    avg_delay /= NUM_OF_TESTS
+                    writer.writerow(['avg', '%.2f%%' % avg_drop_rate, '%.2f' % avg_delay])
 

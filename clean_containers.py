@@ -44,5 +44,5 @@ def clean(image_name:str):
     print('all containers and networks are stopped and removed')
 
 if __name__ == '__main__':
-    image_name = 'lightweight:ospf'
+    image_name = 'lightweight:n_0'
     clean(image_name)
