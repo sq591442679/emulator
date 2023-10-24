@@ -242,9 +242,9 @@ if __name__ == '__main__':
                     avg_delay = 0.0
 
                     for i in range(1, NUM_OF_TESTS + 1):
-                        os.system("dmesg -c > /dev/null")  # clear the ring buffer and abandon the output
                         kernel_dmesg_file = "/home/sqsq/Desktop/kernel.log"
                         sudo_password = 'shanqian'
+                        os.system(f"echo '{sudo_password}' | sudo -S dmesg -c > /dev/null")  # clear the ring buffer and abandon the output
                         process_dmesg = subprocess.Popen(f"echo '{sudo_password}' | sudo -S dmesg --follow > '{kernel_dmesg_file}'", shell=True)
 
                         clean(image_name)
