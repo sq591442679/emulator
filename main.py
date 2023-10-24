@@ -243,8 +243,9 @@ if __name__ == '__main__':
 
                     for i in range(1, NUM_OF_TESTS + 1):
                         os.system("dmesg -c > /dev/null")  # clear the ring buffer and abandon the output
-                        kernel_dmesg_file = open("/home/sqsq/Desktop/kernel.log", "w")
-                        process_dmesg = subprocess.Popen("dmesg --follow", shell=True, stdout=kernel_dmesg_file)
+                        kernel_dmesg_file = "/home/sqsq/Desktop/kernel.log"
+                        sudo_password = 'shanqian'
+                        process_dmesg = subprocess.Popen(f"echo '{sudo_password}' | sudo -S dmesg --follow > '{kernel_dmesg_file}'", shell=True)
 
                         clean(image_name)
 
@@ -267,7 +268,6 @@ if __name__ == '__main__':
 
                         clean(image_name)    
                         process_dmesg.terminate()
-                        kernel_dmesg_file.close()
 
                         print('----------------------')
 
