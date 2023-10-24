@@ -4,6 +4,8 @@ import typing
 import csv
 import json
 from multiprocessing import Process, Manager
+import subprocess
+import os
 from threading import Thread
 from common import X, Y, generateISLDelay, getBackwardDirection, NETWORK_NAME_PREFIX, \
                 NUM_OF_TESTS, WARMUP_PERIOD
@@ -215,7 +217,7 @@ if __name__ == '__main__':
         link_failure_rate_list = [0.05]
         # image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)] + ['lightweight:ospf']
         # image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)]
-        image_name_list = ['lightweight:n_0']
+        image_name_list = ['lightweight:ospf']
 
         for image_name in image_name_list:
             for link_failure_rate in link_failure_rate_list:
@@ -227,15 +229,22 @@ if __name__ == '__main__':
 
                 header = ['cnt', 'drop rate', 'delay']
 
-                with open(result_file_path, mode='w', newline='') as f:
+                # with open(result_file_path, mode='w', newline='') as f:
+                #     writer = csv.writer(f)
+                #     writer.writerow(header)
+                #     f.flush()
+
+                with open(result_file_path, mode='a', newline='') as f:
                     writer = csv.writer(f)
-                    writer.writerow(header)
                     f.flush()
 
                     avg_drop_rate = 0.0
                     avg_delay = 0.0
 
                     for i in range(1, NUM_OF_TESTS + 1):
+                        os.system("dmesg -c > /dev/nulll")  # clear the ring buffer and abandon the output
+                        process_dmesg = subprocess.Popen("dmesg --follow > /home/sqsq/Desktop/kernel.log")
+
                         clean(image_name)
 
                         time.sleep(3)
@@ -256,6 +265,7 @@ if __name__ == '__main__':
                         avg_delay += float(ret['delay'])
 
                         clean(image_name)    
+                        process_dmesg.terminate()
 
                         print('----------------------')
 
