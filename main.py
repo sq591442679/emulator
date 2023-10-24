@@ -242,8 +242,9 @@ if __name__ == '__main__':
                     avg_delay = 0.0
 
                     for i in range(1, NUM_OF_TESTS + 1):
-                        os.system("dmesg -c > /dev/nulll")  # clear the ring buffer and abandon the output
-                        process_dmesg = subprocess.Popen("dmesg --follow > /home/sqsq/Desktop/kernel.log")
+                        os.system("dmesg -c > /dev/null")  # clear the ring buffer and abandon the output
+                        kernel_dmesg_file = open("/home/sqsq/Desktop/kernel.log", "w")
+                        process_dmesg = subprocess.Popen("dmesg --follow", shell=True, stdout=kernel_dmesg_file)
 
                         clean(image_name)
 
@@ -266,6 +267,7 @@ if __name__ == '__main__':
 
                         clean(image_name)    
                         process_dmesg.terminate()
+                        kernel_dmesg_file.close()
 
                         print('----------------------')
 
