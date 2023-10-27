@@ -217,7 +217,7 @@ if __name__ == '__main__':
         link_failure_rate_list = [0.05]
         # image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)] + ['lightweight:ospf']
         # image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)]
-        image_name_list = ['lightweight:ospf']
+        image_name_list = ['lightweight:n_5']
 
         for image_name in image_name_list:
             for link_failure_rate in link_failure_rate_list:
@@ -245,6 +245,7 @@ if __name__ == '__main__':
                         kernel_dmesg_file = "/home/sqsq/Desktop/kernel.log"
                         sudo_password = 'shanqian'
                         os.system(f"echo '{sudo_password}' | sudo -S dmesg -c > /dev/null")  # clear the ring buffer and abandon the output
+                        time.sleep(1)
                         process_dmesg = subprocess.Popen(f"echo '{sudo_password}' | sudo -S dmesg --follow > '{kernel_dmesg_file}'", shell=True)
 
                         clean(image_name)
@@ -270,6 +271,7 @@ if __name__ == '__main__':
                         process_dmesg.terminate()
 
                         print('----------------------')
+                        time.sleep(1)
 
                     avg_drop_rate /= NUM_OF_TESTS
                     avg_delay /= NUM_OF_TESTS
