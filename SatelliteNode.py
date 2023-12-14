@@ -144,6 +144,14 @@ class SatelliteNode:
             interface = self.interface_dict[name]
             interface.configOSPF(self.container)
 
+
+    def config_interface_down(self, direction: int):
+        self.container.exec_run('ifconfig eth%d down' % direction)
+
+    
+    def config_interface_up(self, direction: int):
+        self.container.exec_run('ifconfig eth%d up' % direction)
+
     
     def startReceivingUDP(self, shared_result_list, ip: Ipv4Address) -> None:
         ret = self.container.exec_run('python3 ' + CONTAINER_UDP_APP_PATH + 'udp_receiver.py ' + ip.__str__(), stream=True)
@@ -158,6 +166,10 @@ class SatelliteNode:
         # print(ret[1].decode(), flush=True)
 
 
+    """
+    ABORTED
+    link event generation has been implemented in main.py
+    """
     def startEventGenerating(self, shared_event_list, link_failure_rate, can_shut_eth1_down, seed=None) -> typing.List[str]:
         if (seed == None):
             ret = self.container.exec_run('python3 ' + CONTAINER_EVENT_GENERATOR_PATH + 'event_generator.py ' 

@@ -3,16 +3,17 @@ import time
 import typing
 import csv
 import json
-from multiprocessing import Process, Manager
+from multiprocessing import Process, Manager, Lock
 import subprocess
 import os
 from threading import Thread
 from common import X, Y, generateISLDelay, getBackwardDirection, NETWORK_NAME_PREFIX, \
-                NUM_OF_TESTS, WARMUP_PERIOD
+                NUM_OF_TESTS, WARMUP_PERIOD, LINK_DOWN_DURATION, SIMULATION_END_TIME
 from SatelliteNode import SatelliteNodeID, SatelliteNode, satellite_node_dict
 from DirectionalLink import DirectionalLinkID, DirectionalLink, link_dict
 from Ipv4Address import Ipv4Address
 from clean_containers import clean
+import random
 
 
 DELIVERY_SRC_ID_LIST = [SatelliteNodeID(9, 3)]
@@ -143,10 +144,10 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
     src_node_list = [satellite_node_dict[i] for i in DELIVERY_SRC_ID_LIST]
     process_list: typing.List[Process] = []
     manager = Manager()
-    shared_event_list = manager.list()
     shared_result_list = manager.list()
 
-    dst_link = link_dict[DirectionalLinkID(DELIVERY_DST_ID, DELIVERY_DST_ID.getNeighborIDOnDirection(1))]
+    dst_link_id = DirectionalLinkID(DELIVERY_DST_ID, DELIVERY_DST_ID.getNeighborIDOnDirection(1))
+    dst_link = link_dict[dst_link_id]
     dst_ip = dst_link.interface_address
 
     process_receive = Process(target=dst_node.startReceivingUDP, args=(shared_result_list, dst_ip,))
@@ -156,15 +157,11 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
         process_send = Process(target=src_node.startSendingUDP, args=(dst_ip,))
         process_list.append(process_send)
 
-    for id in satellite_node_dict.keys():
-        node = satellite_node_dict[id]
-        if id in DELIVERY_SRC_ID_LIST or id.__eq__(DELIVERY_DST_ID):
-            # process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate, False, node.id.__hash__()))
-            process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate, False))  # no random seed
-        else:
-            # process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate, True, node.id.__hash__()))
-            process_event_generator = Process(target=node.startEventGenerating, args=(shared_event_list, link_failure_rate, True))  # no random seed
-        process_list.append(process_event_generator)
+    lock = Lock()
+    for id in link_dict.keys():
+        if id.__lt__(id.generateBackwardLinkID()) and not id.__eq__(dst_link_id):
+            process_event_generator = Process(target=link_event_generator, args=(lock, id, link_failure_rate))  # no random seed
+            process_list.append(process_event_generator)
 
     for process in process_list:
         process.start()
@@ -186,6 +183,73 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
     #         print('', file=f)
     
     return json.loads(shared_result_list[0])
+
+
+"""
+change the generation of link failure event
+past: each container generates interface failure independently in ./container_evnet_generator/
+now: centralized link failure generation in main.py
+"""
+def link_event_generator(lock: Lock, link_id: DirectionalLinkID, link_failure_rate: float, seed: int=None) -> None:
+    if abs(link_failure_rate - 0) < 1e-6:
+        return
+
+    poisson_lambda = link_failure_rate / (LINK_DOWN_DURATION * (1 - link_failure_rate))
+
+    src = link_id.src
+    dst = link_id.dst
+    direction = src.getDirectionOfNeighborID(dst)
+    backward_direction = dst.getDirectionOfNeighborID(src)
+
+    if seed is not None:
+        random.seed(seed)
+
+    start_time = time.time()
+    current_sim_time = time.time() - start_time
+
+    while current_sim_time <= SIMULATION_END_TIME:
+        sim_time_interval = random.expovariate(poisson_lambda)
+
+        if current_sim_time + sim_time_interval >= SIMULATION_END_TIME:
+            # if there aren't any failures during this simulation, then break
+            break
+
+        time.sleep(sim_time_interval)
+
+        current_sim_time = time.time() - start_time
+        if current_sim_time >= SIMULATION_END_TIME:
+            break
+
+        with lock:
+            print(
+                '{"sim_time": %.3f, "link": "%s <--> %s", "type": "down"}'
+                % (current_sim_time, link_id.src, link_id.dst),
+                flush=True
+            )
+            satellite_node_dict[src].config_interface_down(direction)
+            satellite_node_dict[dst].config_interface_down(backward_direction)
+
+        current_sim_time = time.time() - start_time
+        if current_sim_time >= SIMULATION_END_TIME:
+            break
+
+        time.sleep(LINK_DOWN_DURATION)
+
+        current_sim_time = time.time() - start_time
+        if current_sim_time >= SIMULATION_END_TIME:
+            break
+
+        if current_sim_time <= SIMULATION_END_TIME:
+            with lock:
+                print(
+                    '{"sim_time": %.3f, "link": "%s <--> %s", "type": "up"}'
+                    % (current_sim_time, link_id.src, link_id.dst),
+                    flush=True
+                )
+                satellite_node_dict[src].config_interface_up(direction)
+                satellite_node_dict[dst].config_interface_up(backward_direction)
+
+        current_sim_time = time.time() - start_time
 
 
 """

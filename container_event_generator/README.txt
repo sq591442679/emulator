@@ -1,2 +1,2 @@
-这个目录下都是帮助脚本
-在程序运行时会将其复制到容器中并执行，从而达到在容器中执行某些命令的效果
+ABORTED
+link event generation has been implemented in main.py
