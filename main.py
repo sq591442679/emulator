@@ -122,9 +122,6 @@ def configOSPFInterfaces():
     print('OSPF interfaces configured')
     
 
-"""
-start sending and the link disconnecting/reconnecting
-"""
 def startFRR():
     process_list = []
 
@@ -139,6 +136,9 @@ def startFRR():
         process.join()
 
 
+"""
+start sending and the link disconnecting/reconnecting
+"""
 def startSimulation(link_failure_rate: float) -> typing.Dict:
     dst_node = satellite_node_dict[DELIVERY_DST_ID]
     src_node_list = [satellite_node_dict[i] for i in DELIVERY_SRC_ID_LIST]
@@ -306,6 +306,8 @@ if __name__ == '__main__':
                     avg_delay = 0.0
 
                     for i in range(1, NUM_OF_TESTS + 1):
+                        print('link failure rate: %f, image name:%s, test: %d' % (link_failure_rate, image_name, i))
+
                         kernel_dmesg_file = "/home/sqsq/Desktop/kernel.log"
                         sudo_password = 'shanqian'
                         os.system(f"echo '{sudo_password}' | sudo -S dmesg -c > /dev/null")  # clear the ring buffer and abandon the output

@@ -14,7 +14,7 @@ CONTAINER_UDP_APP_PATH = '/container_udp_applications/'
 HOST_EVENT_GENERATOR_PATH = './container_event_generator/'
 CONTAINER_EVENT_GENERATOR_PATH = '/container_event_generator/'
 
-NUM_OF_TESTS = 50
+NUM_OF_TESTS = 1
 
 WARMUP_PERIOD = 10  # unit: s  NOTE need to be synchronised with WARMUP_PERIOD in frr/ospfd/ospfd.h
 
