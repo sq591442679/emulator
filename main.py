@@ -271,14 +271,14 @@ def dry_run(image_name: str):
 
 
 if __name__ == '__main__':
-    is_dry_run = False
+    is_dry_run = True
 
     if (is_dry_run):
         dry_run('lightweight:ospf')
     else:
         # link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
         # link_failure_rate_list = [0]
-        link_failure_rate_list = [0.05]
+        link_failure_rate_list = [0.1]
         # image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)] + ['lightweight:ospf']
         # image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)]
         image_name_list = ['lightweight:n_5']

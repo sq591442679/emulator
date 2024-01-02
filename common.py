@@ -14,7 +14,7 @@ CONTAINER_UDP_APP_PATH = '/container_udp_applications/'
 HOST_EVENT_GENERATOR_PATH = './container_event_generator/'
 CONTAINER_EVENT_GENERATOR_PATH = '/container_event_generator/'
 
-NUM_OF_TESTS = 1
+NUM_OF_TESTS = 50
 
 WARMUP_PERIOD = 10  # unit: s  NOTE need to be synchronised with WARMUP_PERIOD in frr/ospfd/ospfd.h
 
@@ -29,6 +29,9 @@ R = 6371004  # 地球半径6371.004千米
 C = 3e8  # 光速
 
 RANDOM_SEED = 8461
+
+QUEUE_CAPACITY_BYTE = '100kB'
+QUEUE_CAPACITY_PACKET = '100'
 
 
 def rescale(num, NUM):
