@@ -4,7 +4,9 @@ import subprocess
 import os
 import time
 from common import rescale, X, Y, HOST_HELPER_SCRIPTS_PATH, CONTAINER_HELPER_SCRIPTS_PATH, \
-                HOST_UDP_APP_PATH, CONTAINER_UDP_APP_PATH, HOST_EVENT_GENERATOR_PATH, CONTAINER_EVENT_GENERATOR_PATH
+                HOST_UDP_APP_PATH, CONTAINER_UDP_APP_PATH, HOST_EVENT_GENERATOR_PATH, CONTAINER_EVENT_GENERATOR_PATH, \
+                HOST_LOAD_AWARENESS_PATH, CONTAINER_LOAD_AWARENESS_PATH, \
+                QUEUE_CAPACITY_PACKET, LOFI_DELTA, ENABLE_LOAD_AWARESS
 from Ipv4Address import Ipv4Address
 from IPInterface import IPInterface
 
@@ -88,9 +90,13 @@ class SatelliteNode:
         subprocess.run(['docker', 'cp', HOST_HELPER_SCRIPTS_PATH, self.id.__str__() + ':' + CONTAINER_HELPER_SCRIPTS_PATH], stdout=subprocess.DEVNULL)
         subprocess.run(['docker', 'cp', HOST_UDP_APP_PATH, self.id.__str__() + ':' + CONTAINER_UDP_APP_PATH], stdout=subprocess.DEVNULL)
         subprocess.run(['docker', 'cp', HOST_EVENT_GENERATOR_PATH, self.id.__str__() + ':' + CONTAINER_EVENT_GENERATOR_PATH], stdout=subprocess.DEVNULL)
+        subprocess.run(['docker', 'cp', HOST_LOAD_AWARENESS_PATH, self.id.__str__() + ':' + CONTAINER_LOAD_AWARENESS_PATH], stdout=subprocess.DEVNULL)
         self.container.exec_run('chmod 777 -R ' + CONTAINER_HELPER_SCRIPTS_PATH + '*', privileged=True)
         self.container.exec_run('chmod 777 -R ' + CONTAINER_UDP_APP_PATH + '*', privileged=True)
         self.container.exec_run('chmod 777 -R ' + CONTAINER_EVENT_GENERATOR_PATH + '*', privileged=True)
+        self.container.exec_run('chmod 777 -R ' + CONTAINER_LOAD_AWARENESS_PATH + '*', privileged=True)
+        self.container.exec_run('gcc %sload_awareness.c -o load_awareness -lm `pkg-config --cflags --libs libnl-3.0`' % CONTAINER_LOAD_AWARENESS_PATH, 
+                                privileged=True)    # compile
  
         time.sleep(2)
 
@@ -164,6 +170,14 @@ class SatelliteNode:
     def startSendingUDP(self, ip: Ipv4Address) -> None:
         ret = self.container.exec_run('python3 ' + CONTAINER_UDP_APP_PATH + 'udp_sender.py ' + ip.__str__())
         # print(ret[1].decode(), flush=True)
+
+
+    def start_load_awareness(self) -> None:
+        ret = self.container.exec_run('%sload_awareness %d %f %d %d %d %d %d' 
+                                      % (CONTAINER_LOAD_AWARENESS_PATH, ENABLE_LOAD_AWARESS, LOFI_DELTA, QUEUE_CAPACITY_PACKET, 
+                                         self.interface_dict['eth1'].cost, self.interface_dict['eth2'].cost, 
+                                         self.interface_dict['eth3'].cost, self.interface_dict['eth4'].cost))
+        print(ret[1].decode(), flush=True)
 
 
     """

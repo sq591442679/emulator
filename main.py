@@ -8,7 +8,7 @@ import subprocess
 import os
 from threading import Thread
 from common import X, Y, generateISLDelay, getBackwardDirection, NETWORK_NAME_PREFIX, \
-                NUM_OF_TESTS, WARMUP_PERIOD, LINK_DOWN_DURATION, SIMULATION_END_TIME
+                NUM_OF_TESTS, WARMUP_PERIOD, LINK_DOWN_DURATION, SIMULATION_END_TIME, ENABLE_LOAD_AWARESS
 from SatelliteNode import SatelliteNodeID, SatelliteNode, satellite_node_dict
 from DirectionalLink import DirectionalLinkID, DirectionalLink, link_dict
 from Ipv4Address import Ipv4Address
@@ -251,6 +251,13 @@ def link_event_generator(lock: Lock, link_id: DirectionalLinkID, link_failure_ra
 
         current_sim_time = time.time() - start_time
 
+"""
+this function will be called whether ENABLE_LOAD_AWARENESS is set
+"""
+def start_load_awareness():
+    for id in satellite_node_dict.keys():
+        satellite_node_dict[id].start_load_awareness()
+
 
 """
 only start containers & networks,
@@ -268,6 +275,7 @@ def dry_run(image_name: str):
     configOSPFInterfaces()
 
     startFRR()
+    start_load_awareness()
 
 
 if __name__ == '__main__':
@@ -323,6 +331,7 @@ if __name__ == '__main__':
                         configOSPFInterfaces()
 
                         startFRR()
+                        start_load_awareness()
 
                         time.sleep(WARMUP_PERIOD)  # wait for OSPF convergence
 

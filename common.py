@@ -14,6 +14,9 @@ CONTAINER_UDP_APP_PATH = '/container_udp_applications/'
 HOST_EVENT_GENERATOR_PATH = './container_event_generator/'
 CONTAINER_EVENT_GENERATOR_PATH = '/container_event_generator/'
 
+HOST_LOAD_AWARENESS_PATH = './container_load_awareness/'
+CONTAINER_LOAD_AWARENESS_PATH = '/container_load_awareness/'
+
 NUM_OF_TESTS = 50
 
 WARMUP_PERIOD = 10  # unit: s  NOTE need to be synchronised with WARMUP_PERIOD in frr/ospfd/ospfd.h
@@ -32,6 +35,9 @@ RANDOM_SEED = 8461
 
 QUEUE_CAPACITY_BYTE = '100kB'
 QUEUE_CAPACITY_PACKET = '100'
+
+ENABLE_LOAD_AWARESS = 1
+LOFI_DELTA = 0.1 # LoFi parameter
 
 
 def rescale(num, NUM):
