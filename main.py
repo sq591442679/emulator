@@ -134,6 +134,7 @@ def startFRR():
 
     for process in process_list:
         process.join()
+    print('FRR started')
 
 
 """
@@ -254,9 +255,13 @@ def link_event_generator(lock: Lock, link_id: DirectionalLinkID, link_failure_ra
 """
 this function will be called whether ENABLE_LOAD_AWARENESS is set
 """
-def start_load_awareness():
-    for id in satellite_node_dict.keys():
-        satellite_node_dict[id].start_load_awareness()
+def start_load_awareness(image_name: str):
+    if image_name == 'lightweight:ospf':
+        print('using ospf, do not config load awareness')
+    else:
+        for id in satellite_node_dict.keys():
+            satellite_node_dict[id].start_load_awareness()
+        print('load awareness configured')
 
 
 """
@@ -275,14 +280,14 @@ def dry_run(image_name: str):
     configOSPFInterfaces()
 
     startFRR()
-    start_load_awareness()
+    # start_load_awareness(image_name)
 
 
 if __name__ == '__main__':
     is_dry_run = True
 
     if (is_dry_run):
-        dry_run('lightweight:ospf')
+        dry_run('lightweight:n_2')
     else:
         # link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
         # link_failure_rate_list = [0]
@@ -331,7 +336,7 @@ if __name__ == '__main__':
                         configOSPFInterfaces()
 
                         startFRR()
-                        start_load_awareness()
+                        start_load_awareness(image_name)
 
                         time.sleep(WARMUP_PERIOD)  # wait for OSPF convergence
 
