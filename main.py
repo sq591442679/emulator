@@ -73,9 +73,9 @@ def buildLinks():
                 link_cost = 0x3f3f3f3f
 
                 if direction == 4:
-                    link_cost = int(delay_dict[src_node_id.x] * 10000)
+                    link_cost = int(round(delay_dict[src_node_id.x] * 10000))   # cost is defined as delay (ms) * 10
                 else:
-                    link_cost = int(delay_dict[0] * 10000)
+                    link_cost = int(round(delay_dict[0] * 10000))
 
                 ipam_pool = docker.types.IPAMPool(
                     subnet = '192.168.%d.0/24' % ip_subnet_cnt,
