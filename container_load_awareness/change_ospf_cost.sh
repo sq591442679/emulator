@@ -5,4 +5,4 @@ echo "
 config ter
 interface $1
 ip ospf cost $2
-" | vtysh
+" | vtysh > /dev/null

@@ -62,22 +62,27 @@ static int nl_recv_message(struct nl_msg *msg, void *arg) {
     printf("Received an int array from netlink message:\n");
     for (int i = 0; i < ARRAY_SIZE; ++i) {
         printf("cnt:%d Array[%d]: %d\n", recv_cnt, i, array_data[i]);
-        if (array_data[i] != -1 && enable_load_awareness) { // array_data == -1 means this interface is down
-            if ((double)abs(array_data[i] - last_time_qlen[i]) >= delta * (double)forwarding_queue_capacity) {
-                // should change spf cost and flood
-                double queuing_delay = estimate_queuing_delay(BANDWIDTH, PACKET_SIZE, array_data[i]);
-                int new_cost = transmission_cost[i] + delay_to_cost(queuing_delay);
+        if (enable_load_awareness) {
+            if (array_data[i] != -1) {  // array_data == -1 means this interface is down
+                if ((double)abs(array_data[i] - last_time_qlen[i]) >= delta * (double)forwarding_queue_capacity) {
+                    // should change spf cost and flood
+                    double queuing_delay = estimate_queuing_delay(BANDWIDTH, PACKET_SIZE, array_data[i]);
+                    int new_cost = transmission_cost[i] + delay_to_cost(queuing_delay);
 
-                last_time_qlen[i] = array_data[i];
-                
-                snprintf(command, sizeof(command), "./change_ospf_cost.sh %s %d", interface_name[i], new_cost);
-                
-                ret = system(command);
-                if (ret != 0) {
-                    perror("command failed\n");
-                    return -1;
-                }
-            }    
+                    last_time_qlen[i] = array_data[i];
+                    
+                    snprintf(command, sizeof(command), "./change_ospf_cost.sh %s %d", interface_name[i], new_cost);
+                    
+                    ret = system(command);
+                    if (ret != 0) {
+                        perror("command failed\n");
+                        return -1;
+                    }
+                }        
+            }
+            else {
+                last_time_qlen[i] = 0;
+            }
         }
     }
 
@@ -104,7 +109,7 @@ int main(int argc, char const *argv[])
     }
 
     enable_load_awareness = atoi(argv[1]);
-    delta = atoi(argv[2]);
+    delta = atof(argv[2]);
     forwarding_queue_capacity = atoi(argv[3]);
     for (i = 0; i < ARRAY_SIZE; ++i) {
         transmission_cost[i] = atoi(argv[i + 4]);

@@ -91,13 +91,14 @@ class SatelliteNode:
         subprocess.run(['docker', 'cp', HOST_UDP_APP_PATH, self.id.__str__() + ':' + CONTAINER_UDP_APP_PATH], stdout=subprocess.DEVNULL)
         subprocess.run(['docker', 'cp', HOST_EVENT_GENERATOR_PATH, self.id.__str__() + ':' + CONTAINER_EVENT_GENERATOR_PATH], stdout=subprocess.DEVNULL)
         subprocess.run(['docker', 'cp', HOST_LOAD_AWARENESS_PATH, self.id.__str__() + ':' + CONTAINER_LOAD_AWARENESS_PATH], stdout=subprocess.DEVNULL)
-        self.container.exec_run('chmod 777 -R ' + CONTAINER_HELPER_SCRIPTS_PATH + '*', privileged=True)
-        self.container.exec_run('chmod 777 -R ' + CONTAINER_UDP_APP_PATH + '*', privileged=True)
-        self.container.exec_run('chmod 777 -R ' + CONTAINER_EVENT_GENERATOR_PATH + '*', privileged=True)
-        self.container.exec_run('chmod 777 -R ' + CONTAINER_LOAD_AWARENESS_PATH + '*', privileged=True)
+        self.container.exec_run('chmod 777 -R ' + CONTAINER_HELPER_SCRIPTS_PATH, privileged=True)
+        self.container.exec_run('chmod 777 -R ' + CONTAINER_UDP_APP_PATH, privileged=True)
+        self.container.exec_run('chmod 777 -R ' + CONTAINER_EVENT_GENERATOR_PATH, privileged=True)
+        self.container.exec_run('chmod 777 -R ' + CONTAINER_LOAD_AWARENESS_PATH, privileged=True)
 
         ret = self.container.exec_run('/bin/bash ./compile.sh', workdir=CONTAINER_LOAD_AWARENESS_PATH, privileged=True)    # compile
-        self.container.exec_run('chmod 777 -R ' + CONTAINER_LOAD_AWARENESS_PATH + '*', privileged=True)
+        ret = self.container.exec_run('chmod 777 -R ' + CONTAINER_LOAD_AWARENESS_PATH, privileged=True)
+        # ret = self.container.exec_run('ls -l %s' % CONTAINER_LOAD_AWARENESS_PATH, privileged=True)
         # print(ret[1].decode())
 
         time.sleep(2)
