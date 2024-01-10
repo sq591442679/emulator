@@ -18,13 +18,12 @@
 #define MAX_COST            65535
 
 const char interface_name[4][5] = {"eth1", "eth2", "eth3", "eth4"};
-int last_time_qlen[5] = {0};        // last_time_qlen[0] is the last-time qlen of eth1
 int transmission_cost[5] = {0};     // transmission_cost[0] is the init cost of eth1
-int recv_cnt = 0;
 int enable_load_awareness = 0;
 int forwarding_queue_capacity = 0;  // unit: packet
 double delta;
 char command[120];
+u_int32_t qlen_amplitude_threshold;       // send delta * forwarding_queue_capacity to kernel through netlink messages
 
 /**
  * calculate queuing delay based on bandwidth, avg packet size and qlen
@@ -51,8 +50,6 @@ static int nl_recv_message(struct nl_msg *msg, void *arg) {
     int *array_data;
     int ret;
 
-    recv_cnt++;
-
     if (nlh->nlmsg_len < NLMSG_HDRLEN + ARRAY_SIZE * sizeof(int)) {
         printf("Invalid message length\n");
         return -1;
@@ -67,25 +64,18 @@ static int nl_recv_message(struct nl_msg *msg, void *arg) {
         
         if (enable_load_awareness) {
             if (array_data[i] != -1) {  // array_data == -1 means this interface is down
-                if ((double)abs(array_data[i] - last_time_qlen[i]) >= delta * (double)forwarding_queue_capacity) {
-                    // should change spf cost and flood
-                    double queuing_delay = estimate_queuing_delay(BANDWIDTH, PACKET_SIZE, array_data[i]);
-                    int new_cost = transmission_cost[i] + delay_to_cost(queuing_delay);
-
-                    last_time_qlen[i] = array_data[i];
-                    
-                    snprintf(command, sizeof(command), "/container_load_awareness/change_ospf_cost.sh %s %d\n", interface_name[i], new_cost);
-                    // printf(command);
-                    
-                    ret = system(command);
-                    if (ret != 0) {
-                        perror("command failed\n");
-                        return -1;
-                    }
-                }        
-            }
-            else {
-                last_time_qlen[i] = 0;
+                // should change spf cost and flood
+                double queuing_delay = estimate_queuing_delay(BANDWIDTH, PACKET_SIZE, array_data[i]);
+                int new_cost = transmission_cost[i] + delay_to_cost(queuing_delay);
+                
+                snprintf(command, sizeof(command), "/container_load_awareness/change_ospf_cost.sh %s %d\n", interface_name[i], new_cost);
+                printf(command);
+                
+                ret = system(command);
+                if (ret != 0) {
+                    perror("command failed\n");
+                    return -1;
+                }      
             }
         }
     }
@@ -106,6 +96,8 @@ int main(int argc, char const *argv[])
 {
     struct nl_sock *sk;
     int ret, i;
+    struct nl_msg *delta_msg = nlmsg_alloc();
+    struct nlmsghdr *hdr;
 
     if (argc != 8) {
         perror("parameter invalid\n");
@@ -118,6 +110,7 @@ int main(int argc, char const *argv[])
     for (i = 0; i < ARRAY_SIZE; ++i) {
         transmission_cost[i] = atoi(argv[i + 4]);
     }
+    qlen_amplitude_threshold = (u_int32_t)round(delta * forwarding_queue_capacity);
 
     sk = nl_socket_alloc();
 
@@ -127,8 +120,21 @@ int main(int argc, char const *argv[])
 
     nl_connect(sk, NETLINK_RECV_PACKET);
 
-   // 设置回调函数来处理接收到的消息
+   // set callback function for received netlink messages
     nl_socket_modify_cb(sk, NL_CB_MSG_IN, NL_CB_CUSTOM, nl_recv_message, NULL);
+
+    // send qlen_amplitude_threshold to kernel
+    hdr = nlmsg_put(delta_msg, LOAD_AWARENESS_PID, NL_AUTO_SEQ, NETLINK_RECV_PACKET, sizeof(qlen_amplitude_threshold), NLM_F_CREATE);
+    if (hdr == NULL) {
+        perror("nlmsg_put failed\n");
+    }
+    memcpy(nlmsg_data(hdr), &qlen_amplitude_threshold, sizeof(qlen_amplitude_threshold));
+    ret = nl_send_auto(sk, delta_msg);
+    if (ret < 0) {
+        perror("nl_sned_auto failed\n");
+    }
+    // printf("netlink data len:%d\n", nlmsg_datalen(hdr));
+    printf("sent qlen_amplitude_threshold:%u\n", qlen_amplitude_threshold);
 
     printf("Listening for netlink messages...\n");
 
