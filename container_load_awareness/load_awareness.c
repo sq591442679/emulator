@@ -69,7 +69,7 @@ static int nl_recv_message(struct nl_msg *msg, void *arg) {
                 int new_cost = transmission_cost[i] + delay_to_cost(queuing_delay);
                 
                 snprintf(command, sizeof(command), "/container_load_awareness/change_ospf_cost.sh %s %d\n", interface_name[i], new_cost);
-                printf(command);
+                // printf(command);
                 
                 ret = system(command);
                 if (ret != 0) {

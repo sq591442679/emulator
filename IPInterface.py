@@ -1,4 +1,4 @@
-from common import CONTAINER_HELPER_SCRIPTS_PATH, QUEUE_CAPACITY_PACKET
+from common import CONTAINER_HELPER_SCRIPTS_PATH, QUEUE_CAPACITY_PACKET, BANDWIDTH
 from Ipv4Address import Ipv4Address
 
 
@@ -12,7 +12,8 @@ class IPInterface:
 
     def configOSPF(self, container):
         # delay and bandwidth config
-        ret = container.exec_run('tc qdisc add dev %s root netem delay %fms rate 1Mbit limit %s' % (self.name, float(self.cost) / 10, QUEUE_CAPACITY_PACKET))
+        ret = container.exec_run('tc qdisc add dev %s root netem delay %fms rate %s limit %s' % 
+                                 (self.name, float(self.cost) / 10, BANDWIDTH, QUEUE_CAPACITY_PACKET))
         # print(ret[1].decode())
 
         # OSPF config

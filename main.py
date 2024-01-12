@@ -3,7 +3,7 @@ import time
 import typing
 import csv
 import json
-from multiprocessing import Process, Manager, Lock
+from multiprocessing import Process, Manager, Lock, Queue
 import subprocess
 import os
 from threading import Thread
@@ -13,6 +13,7 @@ from SatelliteNode import SatelliteNodeID, SatelliteNode, satellite_node_dict
 from DirectionalLink import DirectionalLinkID, DirectionalLink, link_dict
 from Ipv4Address import Ipv4Address
 from clean_containers import clean
+import packet_capture
 import random
 
 
@@ -146,6 +147,7 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
     process_list: typing.List[Process] = []
     manager = Manager()
     shared_result_list = manager.list()
+    result_overhead_queue = Queue()
 
     dst_link_id = DirectionalLinkID(DELIVERY_DST_ID, DELIVERY_DST_ID.getNeighborIDOnDirection(1))
     dst_link = link_dict[dst_link_id]
@@ -163,6 +165,9 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
         if id.__lt__(id.generateBackwardLinkID()) and not id.__eq__(dst_link_id):
             process_event_generator = Process(target=link_event_generator, args=(lock, id, link_failure_rate))  # no random seed
             process_list.append(process_event_generator)
+
+    process_capture = Process(target=packet_capture.start, args=(result_overhead_queue, ))
+    process_list.append(process_capture)
 
     for process in process_list:
         process.start()
@@ -182,8 +187,11 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
     # else:
     #     with open(event_file_path, 'a') as f:
     #         print('', file=f)
+
+    ret = json.loads(shared_result_list[0])
+    ret['overhead'] = result_overhead_queue.get()
     
-    return json.loads(shared_result_list[0])
+    return ret
 
 
 """
@@ -252,6 +260,7 @@ def link_event_generator(lock: Lock, link_id: DirectionalLinkID, link_failure_ra
 
         current_sim_time = time.time() - start_time
 
+
 """
 this function will be called whether ENABLE_LOAD_AWARENESS is set
 """
@@ -287,36 +296,36 @@ if __name__ == '__main__':
     is_dry_run = True
 
     if (is_dry_run):
-        dry_run('lightweight:n_2')
+        dry_run('locksoyev/lofi_satellite:n_2')
     else:
-        # link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
+        link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
         # link_failure_rate_list = [0]
-        link_failure_rate_list = [0.1]
-        # image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)] + ['lightweight:ospf']
+        # link_failure_rate_list = [0.1]
+        image_name_list = ['locksoyev/lofi_satellite:n_%d' % i for i in range(0, 6)] + ['locksoyev/lofi_satellite:ospf']
         # image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)]
-        image_name_list = ['lightweight:n_5']
+        # image_name_list = ['lightweight:n_5']
 
         for image_name in image_name_list:
             for link_failure_rate in link_failure_rate_list:
-                result_prefix = './results/%s/%.02f/' % (image_name, link_failure_rate)
-                event_file_path = result_prefix + 'events.json'
-                with open(event_file_path, 'w') as f:
-                    print('', end='', file=f)
+                if ENABLE_LOAD_AWARESS:
+                    result_prefix = './results/ENABLE_LOAD_AWARESS/%s/%.02f/' % (image_name.split(':')[-1], link_failure_rate)
+                else:
+                    result_prefix = './results/NO_LOAD_AWARESS/%s/%.02f/' % (image_name.split(':')[-1], link_failure_rate)
                 result_file_path = result_prefix + 'result.csv'  
 
-                header = ['cnt', 'drop rate', 'delay']
+                header = ['cnt', 'drop rate', 'delay', 'overhead']
 
-                # with open(result_file_path, mode='w', newline='') as f:
-                #     writer = csv.writer(f)
-                #     writer.writerow(header)
-                #     f.flush()
+                if not os.path.exists(result_prefix):
+                    os.makedirs(result_prefix)
 
-                with open(result_file_path, mode='a', newline='') as f:
+                with open(result_file_path, mode='w', newline='') as f:
                     writer = csv.writer(f)
+                    writer.writerow(header)
                     f.flush()
 
                     avg_drop_rate = 0.0
                     avg_delay = 0.0
+                    avg_overhead = 0.0
 
                     for i in range(1, NUM_OF_TESTS + 1):
                         print('link failure rate: %f, image name:%s, test: %d' % (link_failure_rate, image_name, i))
@@ -342,10 +351,11 @@ if __name__ == '__main__':
 
                         ret = startSimulation(link_failure_rate)
 
-                        writer.writerow([i, ret['drop rate'], ret['delay']])
+                        writer.writerow([i, ret['drop rate'], ret['delay'], ret['overhead']])
                         f.flush()
                         avg_drop_rate += float(ret['drop rate'].strip('%'))
                         avg_delay += float(ret['delay'])
+                        avg_overhead += float(ret['overhead'])
 
                         clean(image_name)    
                         process_dmesg.terminate()
@@ -355,5 +365,6 @@ if __name__ == '__main__':
 
                     avg_drop_rate /= NUM_OF_TESTS
                     avg_delay /= NUM_OF_TESTS
-                    writer.writerow(['avg', '%.2f%%' % avg_drop_rate, '%.2f' % avg_delay])
+                    avg_overhead /= NUM_OF_TESTS
+                    writer.writerow(['avg', '%.2f%%' % avg_drop_rate, '%.2f' % avg_delay, '%.2f' % avg_overhead])
 
