@@ -1,0 +1,1 @@
+run the emulation with `sudo python3 main.py`

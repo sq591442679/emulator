@@ -167,7 +167,7 @@ class SatelliteNode:
         for line in ret[1]:
             if len(line.decode().strip()) > 0:
                 shared_result_list.append(line.decode().strip())
-            print(line.decode(), flush=True)
+            # print(line.decode(), flush=True)
 
 
     def startSendingUDP(self, ip: Ipv4Address) -> None:

@@ -1,4 +1,4 @@
-from scapy.all import *
+from scapy.all import IP, sniff
 import re
 import time
 import multiprocessing
@@ -40,7 +40,7 @@ def start(result_overhead_queue: multiprocessing.Queue = None):
         pass
     
     if result_overhead_queue is not None:
-        result_overhead_queue.put(total_bytes / 1e6)
+        result_overhead_queue.put(str(total_bytes / 1e6))
     
     return total_bytes / 1e6
 

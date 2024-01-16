@@ -265,7 +265,7 @@ def link_event_generator(lock: Lock, link_id: DirectionalLinkID, link_failure_ra
 this function will be called whether ENABLE_LOAD_AWARENESS is set
 """
 def start_load_awareness(image_name: str):
-    if image_name == 'lightweight:ospf':
+    if image_name == 'locksoyev/lofi_satellite:ospf':
         print('using ospf, do not config load awareness')
     else:
         for id in satellite_node_dict.keys():
@@ -293,17 +293,16 @@ def dry_run(image_name: str):
 
 
 if __name__ == '__main__':
-    is_dry_run = True
+    is_dry_run = False
 
     if (is_dry_run):
         dry_run('locksoyev/lofi_satellite:n_2')
     else:
         link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
         # link_failure_rate_list = [0]
-        # link_failure_rate_list = [0.1]
-        image_name_list = ['locksoyev/lofi_satellite:n_%d' % i for i in range(0, 6)] + ['locksoyev/lofi_satellite:ospf']
-        # image_name_list = ['lightweight:n_%d' % i for i in range(0, 6)]
-        # image_name_list = ['lightweight:n_5']
+        # link_failure_rate_list = [0.2]
+        image_name_list = ['locksoyev/lofi_satellite:n_%d' % i for i in range(1, 6)] + ['locksoyev/lofi_satellite:ospf']
+        # image_name_list = ['locksoyev/lofi_satellite:n_0']
 
         for image_name in image_name_list:
             for link_failure_rate in link_failure_rate_list:
@@ -353,6 +352,9 @@ if __name__ == '__main__':
 
                         writer.writerow([i, ret['drop rate'], ret['delay'], ret['overhead']])
                         f.flush()
+
+                        print(i, ret, flush=True)
+
                         avg_drop_rate += float(ret['drop rate'].strip('%'))
                         avg_delay += float(ret['delay'])
                         avg_overhead += float(ret['overhead'])
