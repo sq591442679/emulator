@@ -304,8 +304,8 @@ if __name__ == '__main__':
         image_name_list = ['locksoyev/lofi_satellite:n_%d' % i for i in range(1, 6)] + ['locksoyev/lofi_satellite:ospf']
         # image_name_list = ['locksoyev/lofi_satellite:n_0']
 
-        for image_name in image_name_list:
-            for link_failure_rate in link_failure_rate_list:
+        for link_failure_rate in link_failure_rate_list:
+            for image_name in image_name_list:
                 if ENABLE_LOAD_AWARESS:
                     result_prefix = './results/ENABLE_LOAD_AWARESS/%s/%.02f/' % (image_name.split(':')[-1], link_failure_rate)
                 else:
