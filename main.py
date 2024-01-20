@@ -17,7 +17,8 @@ import packet_capture
 import random
 
 
-DELIVERY_SRC_ID_LIST = [SatelliteNodeID(9, 3)]
+# DELIVERY_SRC_ID_LIST = [SatelliteNodeID(9, 3)]
+DELIVERY_SRC_ID_LIST = [SatelliteNodeID(6, 5), SatelliteNodeID(7, 5), SatelliteNodeID(8, 5), SatelliteNodeID(9, 5)]
 DELIVERY_DST_ID = SatelliteNodeID(5, 5)
 
 
@@ -161,10 +162,12 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
         process_list.append(process_send)
 
     lock = Lock()
+    link_id_set_for_event: typing.Set[DirectionalLinkID] = set()
     for id in link_dict.keys():
         if id.__lt__(id.generateBackwardLinkID()) and not id.__eq__(dst_link_id):
-            process_event_generator = Process(target=link_event_generator, args=(lock, id, link_failure_rate))  # no random seed
-            process_list.append(process_event_generator)
+            link_id_set_for_event.add(id)
+    process_event_generator = Process(target=link_event_generator, args=(link_id_set_for_event, lock, link_failure_rate))  # no random seed
+    process_list.append(process_event_generator)
 
     process_capture = Process(target=packet_capture.start, args=(result_overhead_queue, ))
     process_list.append(process_capture)
@@ -199,66 +202,67 @@ change the generation of link failure event
 past: each container generates interface failure independently in ./container_evnet_generator/
 now: centralized link failure generation in main.py
 """
-def link_event_generator(lock: Lock, link_id: DirectionalLinkID, link_failure_rate: float, seed: int=None) -> None:
+def link_event_generator(link_id_set_for_event: typing.Set[DirectionalLinkID], lock: Lock, link_failure_rate: float) -> None:
     if abs(link_failure_rate - 0) < 1e-6:
         return
 
     poisson_lambda = link_failure_rate / (LINK_DOWN_DURATION * (1 - link_failure_rate))
-
-    src = link_id.src
-    dst = link_id.dst
-    direction = src.getDirectionOfNeighborID(dst)
-    backward_direction = dst.getDirectionOfNeighborID(src)
-
-    if seed is not None:
-        random.seed(seed)
-
     start_time = time.time()
-    current_sim_time = time.time() - start_time
 
-    while current_sim_time <= SIMULATION_END_TIME:
+    for link_id in link_id_set_for_event:   # init the first link down moment
+        link = link_dict[link_id]
         sim_time_interval = random.expovariate(poisson_lambda)
+        link.down_moment = sim_time_interval
 
-        if current_sim_time + sim_time_interval >= SIMULATION_END_TIME:
-            # if there aren't any failures during this simulation, then break
-            break
+    flag = False
+    while True:
+         if (flag):
+             break
+         for link_id in link_id_set_for_event:
+            link = link_dict[link_id]
+            src = link_id.src
+            dst = link_id.dst
+            direction = src.getDirectionOfNeighborID(dst)
+            backward_direction = dst.getDirectionOfNeighborID(src)
 
-        time.sleep(sim_time_interval)
+            current_sim_time = time.time() - start_time
 
-        current_sim_time = time.time() - start_time
-        if current_sim_time >= SIMULATION_END_TIME:
-            break
+            if current_sim_time <= SIMULATION_END_TIME:
+                if link.is_down and current_sim_time <= link.down_moment + LINK_DOWN_DURATION:
+                    # link is in down state
+                    continue
+                elif link.is_down and current_sim_time > link.down_moment + LINK_DOWN_DURATION:
+                    # link should recover
+                    with lock:
+                        print(
+                            '{"sim_time": %.3f, "link": "%s <--> %s", "type": "up"}'
+                            % (current_sim_time, link_id.src, link_id.dst),
+                            flush=True
+                        )
+                        satellite_node_dict[src].config_interface_up(direction)
+                        satellite_node_dict[dst].config_interface_up(backward_direction)
+                    link.is_down = False
+                    sim_time_interval = random.expovariate(poisson_lambda)
+                    link.down_moment = current_sim_time + sim_time_interval # set the next link down moment
+                elif not link.is_down and current_sim_time > link.down_moment:
+                    # link should turned to down
+                    with lock:
+                        print(
+                            '{"sim_time": %.3f, "link": "%s <--> %s", "type": "down"}'
+                            % (current_sim_time, link_id.src, link_id.dst),
+                            flush=True
+                        )
+                        satellite_node_dict[src].config_interface_down(direction)
+                        satellite_node_dict[dst].config_interface_down(backward_direction)    
+                    link.is_down = True
+                else:
+                    continue
 
-        with lock:
-            print(
-                '{"sim_time": %.3f, "link": "%s <--> %s", "type": "down"}'
-                % (current_sim_time, link_id.src, link_id.dst),
-                flush=True
-            )
-            satellite_node_dict[src].config_interface_down(direction)
-            satellite_node_dict[dst].config_interface_down(backward_direction)
-
-        current_sim_time = time.time() - start_time
-        if current_sim_time >= SIMULATION_END_TIME:
-            break
-
-        time.sleep(LINK_DOWN_DURATION)
-
-        current_sim_time = time.time() - start_time
-        if current_sim_time >= SIMULATION_END_TIME:
-            break
-
-        if current_sim_time <= SIMULATION_END_TIME:
-            with lock:
-                print(
-                    '{"sim_time": %.3f, "link": "%s <--> %s", "type": "up"}'
-                    % (current_sim_time, link_id.src, link_id.dst),
-                    flush=True
-                )
-                satellite_node_dict[src].config_interface_up(direction)
-                satellite_node_dict[dst].config_interface_up(backward_direction)
-
-        current_sim_time = time.time() - start_time
+                current_sim_time = time.time() - start_time
+                if current_sim_time >= SIMULATION_END_TIME:
+                    break
+            else:   # sim time exceeded, loop should stop
+                flag = True  
 
 
 """
@@ -292,16 +296,16 @@ def dry_run(image_name: str):
     # start_load_awareness(image_name)
 
 
-if __name__ == '__main__':
+def main():
     is_dry_run = False
 
     if (is_dry_run):
         dry_run('locksoyev/lofi_satellite:n_2')
     else:
-        link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
+        # link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
         # link_failure_rate_list = [0]
-        # link_failure_rate_list = [0.2]
-        image_name_list = ['locksoyev/lofi_satellite:n_%d' % i for i in range(1, 6)] + ['locksoyev/lofi_satellite:ospf']
+        link_failure_rate_list = [0.05, 0.15]
+        image_name_list = ['locksoyev/lofi_satellite:n_%d' % i for i in range(0, 6)] + ['locksoyev/lofi_satellite:ospf']
         # image_name_list = ['locksoyev/lofi_satellite:n_0']
 
         for link_failure_rate in link_failure_rate_list:
@@ -328,12 +332,13 @@ if __name__ == '__main__':
 
                     for i in range(1, NUM_OF_TESTS + 1):
                         print('link failure rate: %f, image name:%s, test: %d' % (link_failure_rate, image_name, i))
+                        start_time = time.time()
 
-                        kernel_dmesg_file = "/home/sqsq/Desktop/kernel.log"
-                        sudo_password = 'shanqian'
-                        os.system(f"echo '{sudo_password}' | sudo -S dmesg -c > /dev/null")  # clear the ring buffer and abandon the output
-                        time.sleep(1)
-                        process_dmesg = subprocess.Popen(f"echo '{sudo_password}' | sudo -S dmesg --follow > '{kernel_dmesg_file}'", shell=True)
+                        # kernel_dmesg_file = "/home/sqsq/Desktop/kernel.log"
+                        # sudo_password = 'shanqian'
+                        # os.system(f"echo '{sudo_password}' | sudo -S dmesg -c > /dev/null")  # clear the ring buffer and abandon the output
+                        # time.sleep(1)
+                        # process_dmesg = subprocess.Popen(f"echo '{sudo_password}' | sudo -S dmesg --follow > '{kernel_dmesg_file}'", shell=True)
 
                         clean(image_name)
 
@@ -353,14 +358,16 @@ if __name__ == '__main__':
                         writer.writerow([i, ret['drop rate'], ret['delay'], ret['overhead']])
                         f.flush()
 
+                        end_time = time.time()
                         print(i, ret, flush=True)
+                        print('slapsed time:%.2fs\n', end_time - start_time)
 
                         avg_drop_rate += float(ret['drop rate'].strip('%'))
                         avg_delay += float(ret['delay'])
                         avg_overhead += float(ret['overhead'])
 
                         clean(image_name)    
-                        process_dmesg.terminate()
+                        # process_dmesg.terminate()
 
                         print('----------------------')
                         time.sleep(1)
@@ -370,3 +377,6 @@ if __name__ == '__main__':
                     avg_overhead /= NUM_OF_TESTS
                     writer.writerow(['avg', '%.2f%%' % avg_drop_rate, '%.2f' % avg_delay, '%.2f' % avg_overhead])
 
+
+if __name__ == '__main__':
+    main()

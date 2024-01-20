@@ -46,6 +46,8 @@ class DirectionalLink:
         self.network = network
         self.interface_address = src_interface_address
         self.cost = cost
+        self.is_down = False
+        self.down_moment = 0.0  # the moment of last/next link down happens
         # print(self.src.id.__str__())
 
         # self.connect()
