@@ -3,7 +3,7 @@ import sys
 import time
 import pickle
 import psutil
-from common_send_and_recv import SEND_INTERVAL, PORT, SIMULATION_END_TIME
+from common.common_send_and_recv import SEND_INTERVAL, PORT, SIMULATION_END_TIME
 
 if __name__ == '__main__':
     send_interval = SEND_INTERVAL

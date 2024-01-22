@@ -1,5 +1,5 @@
-from common import CONTAINER_HELPER_SCRIPTS_PATH, QUEUE_CAPACITY_PACKET, BANDWIDTH
-from Ipv4Address import Ipv4Address
+from common.common import CONTAINER_HELPER_SCRIPTS_PATH, QUEUE_CAPACITY_PACKET, BANDWIDTH
+from IPv4Address.Ipv4Address import Ipv4Address
 
 
 class IPInterface:

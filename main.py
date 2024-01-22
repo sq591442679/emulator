@@ -7,13 +7,13 @@ from multiprocessing import Process, Manager, Lock, Queue
 import subprocess
 import os
 from threading import Thread
-from common import X, Y, generateISLDelay, getBackwardDirection, NETWORK_NAME_PREFIX, \
+from common.common import X, Y, generateISLDelay, getBackwardDirection, NETWORK_NAME_PREFIX, \
                 NUM_OF_TESTS, WARMUP_PERIOD, LINK_DOWN_DURATION, SIMULATION_END_TIME
-from common_send_and_recv import DELIVERY_DST_ID, DELIVERY_SRC_ID_LIST
-from common_load_awareness import ENABLE_LOAD_AWARESS
-from SatelliteNode import SatelliteNodeID, SatelliteNode, satellite_node_dict
-from DirectionalLink import DirectionalLinkID, DirectionalLink, link_dict
-from Ipv4Address import Ipv4Address
+from common.common_send_and_recv import DELIVERY_DST_ID, DELIVERY_SRC_ID_LIST
+from common.common_load_awareness import ENABLE_LOAD_AWARESS
+from SatelliteNode.SatelliteNode import SatelliteNodeID, SatelliteNode, satellite_node_dict
+from DirectionalLink.DirectionalLink import DirectionalLinkID, DirectionalLink, link_dict
+from IPv4Address.Ipv4Address import Ipv4Address
 from clean_containers import clean
 import packet_capture
 import random

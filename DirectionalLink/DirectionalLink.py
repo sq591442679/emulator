@@ -1,7 +1,7 @@
 import docker
 import typing
-from SatelliteNode import SatelliteNode, SatelliteNodeID, satellite_node_dict
-from Ipv4Address import Ipv4Address
+from SatelliteNode.SatelliteNode import SatelliteNodeID, satellite_node_dict
+from IPv4Address.Ipv4Address import Ipv4Address
 
 
 class DirectionalLinkID:

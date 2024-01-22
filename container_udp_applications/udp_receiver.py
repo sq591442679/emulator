@@ -2,7 +2,7 @@ import socket
 import sys
 import pickle
 import time
-from common_send_and_recv import PORT, RECEIVE_DURATION, EXPECTED_RECV_CNT
+from common.common_send_and_recv import PORT, RECEIVE_DURATION, EXPECTED_RECV_CNT
 
 if __name__ == '__main__':
     local_ip = str(sys.argv[1])

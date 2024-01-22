@@ -14,6 +14,12 @@ CONTAINER_UDP_APP_PATH = '/container_udp_applications/'
 HOST_LOAD_AWARENESS_PATH = './container_load_awareness/'
 CONTAINER_LOAD_AWARENESS_PATH = '/container_load_awareness/'
 
+HOST_COMMON_PATH = './common/'
+CONTAINER_COMMON_PATH = '/common/'
+
+HOST_SATELLITENODE_PATH = './SatelliteNode/'
+CONTAINR_SATELLITENODE_PATH = '/SatelliteNode/'
+
 NUM_OF_TESTS = 50
 
 WARMUP_PERIOD = 10  # unit: s  NOTE need to be synchronised with WARMUP_PERIOD in frr/ospfd/ospfd.h

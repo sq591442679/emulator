@@ -1,5 +1,5 @@
 import docker
-import common
+from common.common import NETWORK_NAME_PREFIX
 from threading import Thread
 
 
@@ -33,7 +33,7 @@ def clean(image_name:str):
     threads = []
 
     for network in client.networks.list():
-        if common.NETWORK_NAME_PREFIX in network.name:
+        if NETWORK_NAME_PREFIX in network.name:
             thread = Thread(target=removeNetwork, args=(network, ))
             thread.start()
             threads.append(thread)

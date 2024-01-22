@@ -1,4 +1,4 @@
-from SatelliteNode import SatelliteNodeID
+from SatelliteNode.SatelliteNode import SatelliteNodeID
 
 SIMULATION_END_TIME = 100
 

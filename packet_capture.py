@@ -2,7 +2,7 @@ from scapy.all import IP, sniff
 import re
 import time
 import multiprocessing
-from common import SIMULATION_END_TIME
+from common.common import SIMULATION_END_TIME
 
 
 total_bytes = 0
@@ -22,7 +22,7 @@ def ospf_lsu_callback(packet):
 
 """
 returns the total size of LSU packets
-unit: MBytes
+unit: MBytes per second
 """
 def start(result_overhead_queue: multiprocessing.Queue = None):
     interface_prefix = "br-"
@@ -40,9 +40,9 @@ def start(result_overhead_queue: multiprocessing.Queue = None):
         pass
     
     if result_overhead_queue is not None:
-        result_overhead_queue.put(str(total_bytes / 1e6))
+        result_overhead_queue.put(str(total_bytes / 1e6 / SIMULATION_END_TIME))
     
-    return total_bytes / 1e6
+    return total_bytes / 1e6 / SIMULATION_END_TIME
 
 
 def get_all_interfaces():

@@ -3,13 +3,15 @@ import typing
 import subprocess
 import os
 import time
-from common import rescale, X, Y, HOST_HELPER_SCRIPTS_PATH, CONTAINER_HELPER_SCRIPTS_PATH, \
+from common.common import rescale, X, Y, HOST_HELPER_SCRIPTS_PATH, CONTAINER_HELPER_SCRIPTS_PATH, \
                 HOST_UDP_APP_PATH, CONTAINER_UDP_APP_PATH, \
                 HOST_LOAD_AWARENESS_PATH, CONTAINER_LOAD_AWARENESS_PATH, \
+                HOST_COMMON_PATH, CONTAINER_COMMON_PATH, \
+                HOST_SATELLITENODE_PATH, CONTAINR_SATELLITENODE_PATH, \
                 QUEUE_CAPACITY_PACKET
-from common_load_awareness import LOFI_DELTA, ENABLE_LOAD_AWARESS
-from Ipv4Address import Ipv4Address
-from IPInterface import IPInterface
+from common.common_load_awareness import LOFI_DELTA, ENABLE_LOAD_AWARESS
+from IPv4Address.Ipv4Address import Ipv4Address
+from IPInterface.IPInterface import IPInterface
 
 
 class SatelliteNodeID:
@@ -88,14 +90,14 @@ class SatelliteNode:
         self.container = container
         self.interface_dict: typing.Dict[str, IPInterface] = {}
 
-        subprocess.run(['docker', 'cp', HOST_HELPER_SCRIPTS_PATH, self.id.__str__() + ':' + CONTAINER_HELPER_SCRIPTS_PATH], stdout=subprocess.DEVNULL)
-        subprocess.run(['docker', 'cp', HOST_UDP_APP_PATH, self.id.__str__() + ':' + CONTAINER_UDP_APP_PATH], stdout=subprocess.DEVNULL)
-        subprocess.run(['docker', 'cp', HOST_LOAD_AWARENESS_PATH, self.id.__str__() + ':' + CONTAINER_LOAD_AWARENESS_PATH], stdout=subprocess.DEVNULL)
-        subprocess.run(['docker', 'cp', './common_send_and_recv.py ./SatelliteNode.py', self.id.__str__() + ':/'], stdout=subprocess.DEVNULL)
-        self.container.exec_run('chmod 777 -R ' + CONTAINER_HELPER_SCRIPTS_PATH, privileged=True)
-        self.container.exec_run('chmod 777 -R ' + CONTAINER_UDP_APP_PATH, privileged=True)
-        self.container.exec_run('chmod 777 -R ' + CONTAINER_LOAD_AWARENESS_PATH, privileged=True)
-        self.container.exec_run('chmod 777 /common_send_and_recv.py /SatelliteNode.py', privileged=True)
+        host_path_list = [HOST_SATELLITENODE_PATH, HOST_COMMON_PATH, HOST_HELPER_SCRIPTS_PATH, HOST_LOAD_AWARENESS_PATH, HOST_UDP_APP_PATH]
+        container_path_list = [CONTAINR_SATELLITENODE_PATH, CONTAINER_COMMON_PATH, CONTAINER_HELPER_SCRIPTS_PATH, CONTAINER_LOAD_AWARENESS_PATH, CONTAINER_UDP_APP_PATH]
+
+        for i in range(len(host_path_list)):    # copy
+            host_path = host_path_list[i]
+            container_path = container_path_list[i]
+            subprocess.run(['docker', 'cp', host_path, self.id.__str__() + ':' + container_path], stdout=subprocess.DEVNULL)
+            self.container.exec_run('chmod 777 -R ' + container_path, privileged=True)
 
         ret = self.container.exec_run('/bin/bash ./compile.sh', workdir=CONTAINER_LOAD_AWARENESS_PATH, privileged=True)    # compile
         ret = self.container.exec_run('chmod 777 -R ' + CONTAINER_LOAD_AWARENESS_PATH, privileged=True)
