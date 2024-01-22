@@ -4,9 +4,10 @@ import subprocess
 import os
 import time
 from common import rescale, X, Y, HOST_HELPER_SCRIPTS_PATH, CONTAINER_HELPER_SCRIPTS_PATH, \
-                HOST_UDP_APP_PATH, CONTAINER_UDP_APP_PATH, HOST_EVENT_GENERATOR_PATH, CONTAINER_EVENT_GENERATOR_PATH, \
+                HOST_UDP_APP_PATH, CONTAINER_UDP_APP_PATH, \
                 HOST_LOAD_AWARENESS_PATH, CONTAINER_LOAD_AWARENESS_PATH, \
-                QUEUE_CAPACITY_PACKET, LOFI_DELTA, ENABLE_LOAD_AWARESS
+                QUEUE_CAPACITY_PACKET
+from common_load_awareness import LOFI_DELTA, ENABLE_LOAD_AWARESS
 from Ipv4Address import Ipv4Address
 from IPInterface import IPInterface
 
@@ -89,12 +90,12 @@ class SatelliteNode:
 
         subprocess.run(['docker', 'cp', HOST_HELPER_SCRIPTS_PATH, self.id.__str__() + ':' + CONTAINER_HELPER_SCRIPTS_PATH], stdout=subprocess.DEVNULL)
         subprocess.run(['docker', 'cp', HOST_UDP_APP_PATH, self.id.__str__() + ':' + CONTAINER_UDP_APP_PATH], stdout=subprocess.DEVNULL)
-        subprocess.run(['docker', 'cp', HOST_EVENT_GENERATOR_PATH, self.id.__str__() + ':' + CONTAINER_EVENT_GENERATOR_PATH], stdout=subprocess.DEVNULL)
         subprocess.run(['docker', 'cp', HOST_LOAD_AWARENESS_PATH, self.id.__str__() + ':' + CONTAINER_LOAD_AWARENESS_PATH], stdout=subprocess.DEVNULL)
+        subprocess.run(['docker', 'cp', './common_send_and_recv.py ./SatelliteNode.py', self.id.__str__() + ':/'], stdout=subprocess.DEVNULL)
         self.container.exec_run('chmod 777 -R ' + CONTAINER_HELPER_SCRIPTS_PATH, privileged=True)
         self.container.exec_run('chmod 777 -R ' + CONTAINER_UDP_APP_PATH, privileged=True)
-        self.container.exec_run('chmod 777 -R ' + CONTAINER_EVENT_GENERATOR_PATH, privileged=True)
         self.container.exec_run('chmod 777 -R ' + CONTAINER_LOAD_AWARENESS_PATH, privileged=True)
+        self.container.exec_run('chmod 777 /common_send_and_recv.py /SatelliteNode.py', privileged=True)
 
         ret = self.container.exec_run('/bin/bash ./compile.sh', workdir=CONTAINER_LOAD_AWARENESS_PATH, privileged=True)    # compile
         ret = self.container.exec_run('chmod 777 -R ' + CONTAINER_LOAD_AWARENESS_PATH, privileged=True)
@@ -182,26 +183,6 @@ class SatelliteNode:
                                          self.interface_dict['eth3'].cost, self.interface_dict['eth4'].cost), 
                                          workdir=CONTAINER_LOAD_AWARENESS_PATH, privileged=True, detach=True)
         # print(ret[1].decode(), flush=True)
-
-
-    """
-    ABORTED
-    link event generation has been implemented in main.py
-    """
-    def startEventGenerating(self, shared_event_list, link_failure_rate, can_shut_eth1_down, seed=None) -> typing.List[str]:
-        if (seed == None):
-            ret = self.container.exec_run('python3 ' + CONTAINER_EVENT_GENERATOR_PATH + 'event_generator.py ' 
-                                          + str(link_failure_rate) + ' ' + self.id.__str__() + ' ' + str(can_shut_eth1_down), 
-                                          stream=True)
-        else:
-            ret = self.container.exec_run('python3 ' + CONTAINER_EVENT_GENERATOR_PATH + 'event_generator.py ' 
-                                          + str(link_failure_rate) + ' ' + self.id.__str__() + ' ' + str(can_shut_eth1_down) + ' ' + str(seed), 
-                                          stream=True)
-            
-        for line in ret[1]:
-            if len(line.decode().strip()) > 0:
-                print(line.decode().strip(), flush=True)
-                shared_event_list.append(line.decode().strip())
 
             
 satellite_node_dict: typing.Dict[SatelliteNodeID, SatelliteNode] = {}

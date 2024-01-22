@@ -8,18 +8,15 @@ import subprocess
 import os
 from threading import Thread
 from common import X, Y, generateISLDelay, getBackwardDirection, NETWORK_NAME_PREFIX, \
-                NUM_OF_TESTS, WARMUP_PERIOD, LINK_DOWN_DURATION, SIMULATION_END_TIME, ENABLE_LOAD_AWARESS
+                NUM_OF_TESTS, WARMUP_PERIOD, LINK_DOWN_DURATION, SIMULATION_END_TIME
+from common_send_and_recv import DELIVERY_DST_ID, DELIVERY_SRC_ID_LIST
+from common_load_awareness import ENABLE_LOAD_AWARESS
 from SatelliteNode import SatelliteNodeID, SatelliteNode, satellite_node_dict
 from DirectionalLink import DirectionalLinkID, DirectionalLink, link_dict
 from Ipv4Address import Ipv4Address
 from clean_containers import clean
 import packet_capture
 import random
-
-
-# DELIVERY_SRC_ID_LIST = [SatelliteNodeID(9, 3)]
-DELIVERY_SRC_ID_LIST = [SatelliteNodeID(6, 5), SatelliteNodeID(7, 5), SatelliteNodeID(8, 5), SatelliteNodeID(9, 5)]
-DELIVERY_DST_ID = SatelliteNodeID(5, 5)
 
 
 def createSatelliteNode(client: docker.DockerClient, id: SatelliteNodeID, image_name: str):
@@ -297,16 +294,22 @@ def dry_run(image_name: str):
 
 
 def main():
+    sudo_uid = os.environ.get('SUDO_UID')
+
+    if sudo_uid is None:
+        print('need to have root permission, use sudo instead')
+        return
+    
     is_dry_run = False
 
     if (is_dry_run):
         dry_run('locksoyev/lofi_satellite:n_2')
     else:
         # link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
-        # link_failure_rate_list = [0]
-        link_failure_rate_list = [0.05, 0.15]
-        image_name_list = ['locksoyev/lofi_satellite:n_%d' % i for i in range(0, 6)] + ['locksoyev/lofi_satellite:ospf']
-        # image_name_list = ['locksoyev/lofi_satellite:n_0']
+        link_failure_rate_list = [0.05]
+        # link_failure_rate_list = [0.05, 0.15]
+        # image_name_list = ['locksoyev/lofi_satellite:n_%d' % i for i in range(0, 6)] + ['locksoyev/lofi_satellite:ospf']
+        image_name_list = ['locksoyev/lofi_satellite:n_0']
 
         for link_failure_rate in link_failure_rate_list:
             for image_name in image_name_list:
@@ -332,7 +335,7 @@ def main():
 
                     for i in range(1, NUM_OF_TESTS + 1):
                         print('link failure rate: %f, image name:%s, test: %d' % (link_failure_rate, image_name, i))
-                        start_time = time.time()
+                        
 
                         # kernel_dmesg_file = "/home/sqsq/Desktop/kernel.log"
                         # sudo_password = 'shanqian'
@@ -353,14 +356,16 @@ def main():
 
                         time.sleep(WARMUP_PERIOD)  # wait for OSPF convergence
 
+                        start_time = time.time()
                         ret = startSimulation(link_failure_rate)
+                        end_time = time.time()
 
                         writer.writerow([i, ret['drop rate'], ret['delay'], ret['overhead']])
                         f.flush()
 
-                        end_time = time.time()
+                        
                         print(i, ret, flush=True)
-                        print('slapsed time:%.2fs\n', end_time - start_time)
+                        print('simulation elapsed time:%.2f' % (end_time - start_time))
 
                         avg_drop_rate += float(ret['drop rate'].strip('%'))
                         avg_delay += float(ret['delay'])

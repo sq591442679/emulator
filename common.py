@@ -11,9 +11,6 @@ CONTAINER_HELPER_SCRIPTS_PATH = '/container_helper_scripts/'
 HOST_UDP_APP_PATH = './container_udp_applications/'
 CONTAINER_UDP_APP_PATH = '/container_udp_applications/'
 
-HOST_EVENT_GENERATOR_PATH = './container_event_generator/'
-CONTAINER_EVENT_GENERATOR_PATH = '/container_event_generator/'
-
 HOST_LOAD_AWARENESS_PATH = './container_load_awareness/'
 CONTAINER_LOAD_AWARENESS_PATH = '/container_load_awareness/'
 
@@ -36,9 +33,6 @@ RANDOM_SEED = 8461
 QUEUE_CAPACITY_BYTE = '100kB'
 QUEUE_CAPACITY_PACKET = '100'
 BANDWIDTH = '10Mbit'
-
-ENABLE_LOAD_AWARESS = 0
-LOFI_DELTA = 0.1 # LoFi parameter
 
 
 def rescale(num, NUM):

@@ -3,13 +3,13 @@ import sys
 import time
 import pickle
 import psutil
-from udp_common import *
+from common_send_and_recv import SEND_INTERVAL, PORT, SIMULATION_END_TIME
 
 if __name__ == '__main__':
     send_interval = SEND_INTERVAL
     target_ip = str(sys.argv[1])
     target_port = PORT
-    total_send_duration = SIMULATION_DURATION
+    total_send_duration = SIMULATION_END_TIME
 
     cnt = 0
 
