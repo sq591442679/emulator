@@ -1,6 +1,6 @@
 from SatelliteNode.SatelliteNode import SatelliteNodeID
+from common.common import SIMULATION_END_TIME
 
-SIMULATION_END_TIME = 100
 
 PORT = 12345
 RECEIVE_DURATION = SIMULATION_END_TIME + 20

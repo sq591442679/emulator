@@ -14,6 +14,11 @@ class IPInterface:
         # delay and bandwidth config
         ret = container.exec_run('tc qdisc add dev %s root netem delay %fms rate %s limit %s' % 
                                  (self.name, float(self.cost) / 10, BANDWIDTH, QUEUE_CAPACITY_PACKET))
+        # NOTE: default queue scheduling algorithm is pfifo_fast
+        # after adding netem, maybe still need to add a child qdisc pfifo
+        # tc qdisc add dev eth1 root netem delay 134ms rate 100Mbit limit 100
+        # tc qdisc show dev eth1    -- get handle of root, for example 810c: 
+        # tc qdisc add dev eth1 parent 810c:  pfifo limit 100
         # print(ret[1].decode())
 
         # OSPF config

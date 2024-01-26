@@ -300,7 +300,7 @@ def main():
         print('need to have root permission, use sudo instead')
         return
     
-    is_dry_run = False
+    is_dry_run = True
 
     if (is_dry_run):
         dry_run('locksoyev/lofi_satellite:n_2')
