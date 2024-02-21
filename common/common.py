@@ -25,9 +25,9 @@ NUM_OF_TESTS = 50
 WARMUP_PERIOD = 10  # unit: s  NOTE need to be synchronised with WARMUP_PERIOD in frr/ospfd/ospfd.h
 
 LINK_DOWN_DURATION = 5  # unit: s
-SIMULATION_END_TIME = 100
+SIMULATION_END_TIME = 10000
 
-X = 11  # 行 即每个轨道上的卫星数量
+X = 6  # 行 即每个轨道上的卫星数量
 Y = 6  # 列 即轨道数
 
 H = 780000  # 轨道高度780千米

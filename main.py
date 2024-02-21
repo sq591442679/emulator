@@ -121,13 +121,13 @@ def configOSPFInterfaces():
     print('OSPF interfaces configured')
     
 
-def startFRR():
+def startFRR(lofi_n: int):
     process_list = []
 
     print('starting FRR...')
     for node_id in satellite_node_dict.keys():
         node = satellite_node_dict[node_id]
-        process = Process(target=node.startFRR, args=())
+        process = Process(target=node.startFRR, args=(lofi_n, ))
         process.start()
         process_list.append(process)
 
@@ -188,10 +188,10 @@ def startSimulation(link_failure_rate: float) -> typing.Dict:
     #     with open(event_file_path, 'a') as f:
     #         print('', file=f)
 
-    ret = json.loads(shared_result_list[0])
-    ret['overhead'] = result_overhead_queue.get()
+    # ret = json.loads(shared_result_list[0])
+    # ret['overhead'] = result_overhead_queue.get()
     
-    return ret
+    # return ret
 
 
 """
@@ -280,7 +280,7 @@ and run the routing protocol,
 but no UDP sending and event generating.
 used for tests
 """
-def dry_run(image_name: str):
+def dry_run(image_name: str, lofi_n: int):
     clean(image_name)
 
     time.sleep(3)
@@ -289,8 +289,12 @@ def dry_run(image_name: str):
     buildLinks()
     configOSPFInterfaces()
 
-    startFRR()
+    startFRR(lofi_n)
     # start_load_awareness(image_name)
+
+    time.sleep(WARMUP_PERIOD)
+
+    # startSimulation(0.2)
 
 
 def main():
@@ -303,7 +307,7 @@ def main():
     is_dry_run = True
 
     if (is_dry_run):
-        dry_run('locksoyev/lofi_satellite:n_2')
+        dry_run('ospf:latest', -1)
     else:
         # link_failure_rate_list = [0, 0.05, 0.1, 0.15, 0.2]
         link_failure_rate_list = [0.05]
@@ -311,76 +315,76 @@ def main():
         # image_name_list = ['locksoyev/lofi_satellite:n_%d' % i for i in range(0, 6)] + ['locksoyev/lofi_satellite:ospf']
         image_name_list = ['locksoyev/lofi_satellite:n_0']
 
-        for link_failure_rate in link_failure_rate_list:
-            for image_name in image_name_list:
-                if ENABLE_LOAD_AWARESS:
-                    result_prefix = './results/ENABLE_LOAD_AWARESS/%s/%.02f/' % (image_name.split(':')[-1], link_failure_rate)
-                else:
-                    result_prefix = './results/NO_LOAD_AWARESS/%s/%.02f/' % (image_name.split(':')[-1], link_failure_rate)
-                result_file_path = result_prefix + 'result.csv'  
+        # for link_failure_rate in link_failure_rate_list:
+        #     for image_name in image_name_list:
+        #         if ENABLE_LOAD_AWARESS:
+        #             result_prefix = './results/ENABLE_LOAD_AWARESS/%s/%.02f/' % (image_name.split(':')[-1], link_failure_rate)
+        #         else:
+        #             result_prefix = './results/NO_LOAD_AWARESS/%s/%.02f/' % (image_name.split(':')[-1], link_failure_rate)
+        #         result_file_path = result_prefix + 'result.csv'  
 
-                header = ['cnt', 'drop rate', 'delay', 'overhead']
+        #         header = ['cnt', 'drop rate', 'delay', 'overhead']
 
-                if not os.path.exists(result_prefix):
-                    os.makedirs(result_prefix)
+        #         if not os.path.exists(result_prefix):
+        #             os.makedirs(result_prefix)
 
-                with open(result_file_path, mode='w', newline='') as f:
-                    writer = csv.writer(f)
-                    writer.writerow(header)
-                    f.flush()
+        #         with open(result_file_path, mode='w', newline='') as f:
+        #             writer = csv.writer(f)
+        #             writer.writerow(header)
+        #             f.flush()
 
-                    avg_drop_rate = 0.0
-                    avg_delay = 0.0
-                    avg_overhead = 0.0
+        #             avg_drop_rate = 0.0
+        #             avg_delay = 0.0
+        #             avg_overhead = 0.0
 
-                    for i in range(1, NUM_OF_TESTS + 1):
-                        print('link failure rate: %f, image name:%s, test: %d' % (link_failure_rate, image_name, i))
+        #             for i in range(1, NUM_OF_TESTS + 1):
+        #                 print('link failure rate: %f, image name:%s, test: %d' % (link_failure_rate, image_name, i))
                         
 
-                        # kernel_dmesg_file = "/home/sqsq/Desktop/kernel.log"
-                        # sudo_password = 'shanqian'
-                        # os.system(f"echo '{sudo_password}' | sudo -S dmesg -c > /dev/null")  # clear the ring buffer and abandon the output
-                        # time.sleep(1)
-                        # process_dmesg = subprocess.Popen(f"echo '{sudo_password}' | sudo -S dmesg --follow > '{kernel_dmesg_file}'", shell=True)
+        #                 # kernel_dmesg_file = "/home/sqsq/Desktop/kernel.log"
+        #                 # sudo_password = 'shanqian'
+        #                 # os.system(f"echo '{sudo_password}' | sudo -S dmesg -c > /dev/null")  # clear the ring buffer and abandon the output
+        #                 # time.sleep(1)
+        #                 # process_dmesg = subprocess.Popen(f"echo '{sudo_password}' | sudo -S dmesg --follow > '{kernel_dmesg_file}'", shell=True)
 
-                        clean(image_name)
+        #                 clean(image_name)
 
-                        time.sleep(3)
+        #                 time.sleep(3)
 
-                        buildSatellites(image_name)
-                        buildLinks()
-                        configOSPFInterfaces()
+        #                 buildSatellites(image_name)
+        #                 buildLinks()
+        #                 configOSPFInterfaces()
 
-                        startFRR()
-                        start_load_awareness(image_name)
+        #                 startFRR()
+        #                 start_load_awareness(image_name)
 
-                        time.sleep(WARMUP_PERIOD)  # wait for OSPF convergence
+        #                 time.sleep(WARMUP_PERIOD)  # wait for OSPF convergence
 
-                        start_time = time.time()
-                        ret = startSimulation(link_failure_rate)
-                        end_time = time.time()
+        #                 start_time = time.time()
+        #                 ret = startSimulation(link_failure_rate)
+        #                 end_time = time.time()
 
-                        writer.writerow([i, ret['drop rate'], ret['delay'], ret['overhead']])
-                        f.flush()
+        #                 writer.writerow([i, ret['drop rate'], ret['delay'], ret['overhead']])
+        #                 f.flush()
 
                         
-                        print(i, ret, flush=True)
-                        print('simulation elapsed time:%.2f' % (end_time - start_time))
+        #                 print(i, ret, flush=True)
+        #                 print('simulation elapsed time:%.2f' % (end_time - start_time))
 
-                        avg_drop_rate += float(ret['drop rate'].strip('%'))
-                        avg_delay += float(ret['delay'])
-                        avg_overhead += float(ret['overhead'])
+        #                 avg_drop_rate += float(ret['drop rate'].strip('%'))
+        #                 avg_delay += float(ret['delay'])
+        #                 avg_overhead += float(ret['overhead'])
 
-                        clean(image_name)    
-                        # process_dmesg.terminate()
+        #                 clean(image_name)    
+        #                 # process_dmesg.terminate()
 
-                        print('----------------------')
-                        time.sleep(1)
+        #                 print('----------------------')
+        #                 time.sleep(1)
 
-                    avg_drop_rate /= NUM_OF_TESTS
-                    avg_delay /= NUM_OF_TESTS
-                    avg_overhead /= NUM_OF_TESTS
-                    writer.writerow(['avg', '%.2f%%' % avg_drop_rate, '%.2f' % avg_delay, '%.2f' % avg_overhead])
+        #             avg_drop_rate /= NUM_OF_TESTS
+        #             avg_delay /= NUM_OF_TESTS
+        #             avg_overhead /= NUM_OF_TESTS
+        #             writer.writerow(['avg', '%.2f%%' % avg_drop_rate, '%.2f' % avg_delay, '%.2f' % avg_overhead])
 
 
 if __name__ == '__main__':

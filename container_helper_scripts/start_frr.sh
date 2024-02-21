@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # $1: router id
-# $2: 
+# $2: lofi n
 
 echo "
 net.ipv4.conf.eth1.rp_filter = 0
@@ -14,11 +14,20 @@ sysctl -p
 
 sleep 2
 
-echo "
-router ospf
-    ospf router-id $1
+if ["$2" -lt 0]; then
+    echo "
+    router ospf
+        ospf router-id $1
 
-" >> /etc/frr/frr.conf
+    " >> /etc/frr/frr.conf
+else
+    echo "
+    router ospf
+        ospf router-id $1
+        ospf lofi $2
+
+    " >> /etc/frr/frr.conf
+fi
 
 systemctl start frr
 

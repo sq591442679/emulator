@@ -129,14 +129,17 @@ class SatelliteNode:
             raise Exception('write log failed!')
 
 
-    def startFRR(self) -> None:
+    """
+    lofi_n < 0 means we use ospf
+    """
+    def startFRR(self, lofi_n: int) -> None:
         if not os.path.exists(HOST_HELPER_SCRIPTS_PATH + 'start_frr.sh'):
             raise Exception('start_frr.sh not exist!')
 
         # print('starting frr of', self.id.__str__(), flush=True)
 
         router_id_str = Ipv4Address(0, 0, self.id.x, self.id.y).__str__() 
-        ret = self.container.exec_run('/bin/bash ' + CONTAINER_HELPER_SCRIPTS_PATH + 'start_frr.sh ' + router_id_str)
+        ret = self.container.exec_run('/bin/bash ' + CONTAINER_HELPER_SCRIPTS_PATH + 'start_frr.sh ' + router_id_str + ' ' + str(lofi_n))
 
         if ret[0] != 0:
             raise Exception('start frr failed!')
