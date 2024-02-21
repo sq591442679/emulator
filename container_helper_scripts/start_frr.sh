@@ -14,7 +14,7 @@ sysctl -p
 
 sleep 2
 
-if ["$2" -lt 0]; then
+if [ "$2" -lt 0 ]; then
     echo "
     router ospf
         ospf router-id $1
